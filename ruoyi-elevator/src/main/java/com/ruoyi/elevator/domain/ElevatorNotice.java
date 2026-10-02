@@ -29,6 +29,13 @@ public class ElevatorNotice implements Serializable
     /** 关联业务ID */
     private Long bizId;
 
+    /**
+     * 关联业务类型（order 报修工单 / inspection 巡检记录 / 空 无关联）
+     * 前端据此决定「查看关联业务」跳转到哪里。
+     * 不能只看 bizId：工单表与巡检表各自从 1 编号，同一个 id 可能两张表都能命中。
+     */
+    private String bizType;
+
     /** 接收人ID */
     private Long receiverId;
 
@@ -91,6 +98,16 @@ public class ElevatorNotice implements Serializable
     public void setBizId(Long bizId)
     {
         this.bizId = bizId;
+    }
+
+    public String getBizType()
+    {
+        return bizType;
+    }
+
+    public void setBizType(String bizType)
+    {
+        this.bizType = bizType;
     }
 
     public Long getReceiverId()

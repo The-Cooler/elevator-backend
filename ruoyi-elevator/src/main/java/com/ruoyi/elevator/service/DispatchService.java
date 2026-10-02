@@ -122,9 +122,10 @@ public class DispatchService
      *
      * @param orderId 工单ID
      * @param assigneeId 维修员ID
+     * @param remark 派单备注，物业填写后写入流转记录并随通知发给维修员，可为空
      */
     @Transactional(rollbackFor = Exception.class)
-    public int assign(Long orderId, Long assigneeId)
+    public int assign(Long orderId, Long assigneeId, String remark)
     {
         LoginUserUtil.checkPropertyOrAdmin();
         if (assigneeId == null)
@@ -160,15 +161,25 @@ public class DispatchService
         update.setUpdateBy(LoginUserUtil.getUsername());
         int rows = repairOrderMapper.updateRepairOrder(update);
 
-        repairOrderService.recordStatus(orderId, fromStatus, OrderStatusUtil.ASSIGNED, "assign",
-                "派单给维修员【" + worker.getWorkerName() + "】");
+        // 派单备注写入流转记录，未填写时不追加
+        String logRemark = "派单给维修员【" + worker.getWorkerName() + "】";
+        if (StringUtils.isNotEmpty(remark))
+        {
+            logRemark = logRemark + "，备注：" + remark;
+        }
+        repairOrderService.recordStatus(orderId, fromStatus, OrderStatusUtil.ASSIGNED, "assign", logRemark);
 
         // 更新维修员在手工单数
         workerSkillMapper.updateCurrentLoad(assigneeId);
 
-        // 通知维修员
-        noticeService.sendToUser(assigneeId, "新的工单派给您",
-                String.format("工单【%s】已派给您，请及时接单", order.getOrderNo()), orderId);
+        // 通知维修员，备注一并带上
+        String noticeContent = String.format("工单【%s】已派给您，请及时接单", order.getOrderNo());
+        if (StringUtils.isNotEmpty(remark))
+        {
+            noticeContent = noticeContent + "。物业备注：" + remark;
+        }
+        noticeService.sendToUser(assigneeId, "新的工单派给您", noticeContent, orderId,
+                NoticeService.BIZ_ORDER);
         return rows;
     }
 
@@ -177,14 +188,15 @@ public class DispatchService
      *
      * @param orderIds 工单ID数组
      * @param assigneeId 维修员ID
+     * @param remark 派单备注，可为空
      */
     @Transactional(rollbackFor = Exception.class)
-    public int batchAssign(Long[] orderIds, Long assigneeId)
+    public int batchAssign(Long[] orderIds, Long assigneeId, String remark)
     {
         int count = 0;
         for (Long orderId : orderIds)
         {
-            count += assign(orderId, assigneeId);
+            count += assign(orderId, assigneeId, remark);
         }
         return count;
     }

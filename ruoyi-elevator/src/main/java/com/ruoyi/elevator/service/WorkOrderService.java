@@ -101,7 +101,8 @@ public class WorkOrderService
         workerSkillMapper.updateCurrentLoad(LoginUserUtil.getUserId());
 
         noticeService.sendToUser(order.getUserId(), "维修员已接单",
-                String.format("您的报修单【%s】%s", order.getOrderNo(), remark), orderId);
+                String.format("您的报修单【%s】%s", order.getOrderNo(), remark), orderId,
+                NoticeService.BIZ_ORDER);
         return rows;
     }
 
@@ -127,7 +128,8 @@ public class WorkOrderService
                 StringUtils.isEmpty(reason) ? "维修员拒绝接单，工单回到待派单池" : "维修员拒绝接单：" + reason);
 
         noticeService.sendToRole(LoginUserUtil.ROLE_PROPERTY, "工单被拒单",
-                String.format("工单【%s】被维修员拒绝，请重新指派", order.getOrderNo()), orderId);
+                String.format("工单【%s】被维修员拒绝，请重新指派", order.getOrderNo()), orderId,
+                NoticeService.BIZ_ORDER);
         return rows;
     }
 
@@ -160,7 +162,8 @@ public class WorkOrderService
                 StringUtils.isEmpty(location) ? "维修员已到达现场" : "维修员已到达现场，定位：" + location);
 
         noticeService.sendToUser(order.getUserId(), "维修员已到场",
-                String.format("您的报修单【%s】维修员已到达现场", order.getOrderNo()), orderId);
+                String.format("您的报修单【%s】维修员已到达现场", order.getOrderNo()), orderId,
+                NoticeService.BIZ_ORDER);
         return rows;
     }
 
@@ -239,7 +242,7 @@ public class WorkOrderService
 
         noticeService.sendToUser(order.getUserId(), "维修已完成，请确认",
                 String.format("您的报修单【%s】维修已完成：%s，请确认故障是否消除", order.getOrderNo(), finishInfo.getRepairDesc()),
-                orderId);
+                orderId, NoticeService.BIZ_ORDER);
         return rows;
     }
 

@@ -67,7 +67,8 @@ public class DispatchController extends BaseController
     @PostMapping("/assign")
     public AjaxResult assign(@RequestBody RepairOrder repairOrder)
     {
-        return toAjax(dispatchService.assign(repairOrder.getOrderId(), repairOrder.getAssigneeId()));
+        return toAjax(dispatchService.assign(repairOrder.getOrderId(), repairOrder.getAssigneeId(),
+                repairOrder.getRemark()));
     }
 
     /**
@@ -78,7 +79,8 @@ public class DispatchController extends BaseController
     @PostMapping("/batchAssign")
     public AjaxResult batchAssign(@RequestBody RepairOrder repairOrder)
     {
-        return toAjax(dispatchService.batchAssign(repairOrder.getOrderIds(), repairOrder.getAssigneeId()));
+        return toAjax(dispatchService.batchAssign(repairOrder.getOrderIds(), repairOrder.getAssigneeId(),
+                repairOrder.getRemark()));
     }
 
     /**

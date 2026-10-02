@@ -162,11 +162,13 @@ public class ExceptionService
         {
             workerSkillMapper.updateCurrentLoad(oldAssigneeId);
             noticeService.sendToUser(oldAssigneeId, "工单已改派",
-                    String.format("工单【%s】已改派给其他维修员", order.getOrderNo()), orderId);
+                    String.format("工单【%s】已改派给其他维修员", order.getOrderNo()), orderId,
+                    NoticeService.BIZ_ORDER);
         }
         workerSkillMapper.updateCurrentLoad(newAssigneeId);
         noticeService.sendToUser(newAssigneeId, "新的工单派给您",
-                String.format("工单【%s】已派给您，请及时接单", order.getOrderNo()), orderId);
+                String.format("工单【%s】已派给您，请及时接单", order.getOrderNo()), orderId,
+                NoticeService.BIZ_ORDER);
         return rows;
     }
 
@@ -193,7 +195,8 @@ public class ExceptionService
 
         repairOrderService.recordStatus(orderId, order.getOrderStatus(), OrderStatusUtil.REJECTED, "reject", reason);
         noticeService.sendToUser(order.getUserId(), "报修被驳回",
-                String.format("您的报修单【%s】被驳回：%s", order.getOrderNo(), reason), orderId);
+                String.format("您的报修单【%s】被驳回：%s", order.getOrderNo(), reason), orderId,
+                NoticeService.BIZ_ORDER);
         return rows;
     }
 
@@ -225,7 +228,8 @@ public class ExceptionService
         repairOrderService.recordStatus(orderId, order.getOrderStatus(), OrderStatusUtil.PENDING,
                 "escalate", "维修员上报异常：" + reason);
         noticeService.sendToRole(LoginUserUtil.ROLE_PROPERTY, "工单异常上报",
-                String.format("工单【%s】维修员上报异常：%s", order.getOrderNo(), reason), orderId);
+                String.format("工单【%s】维修员上报异常：%s", order.getOrderNo(), reason), orderId,
+                NoticeService.BIZ_ORDER);
         return rows;
     }
 

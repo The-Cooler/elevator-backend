@@ -88,6 +88,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="elevatorId != null">
                 and o.elevator_id = #{elevatorId}
             </if>
+            <!-- 按电梯编号模糊查询，供物业在报修工单列表按电梯筛选 -->
+            <if test="elevatorCode != null and elevatorCode != ''">
+                and e.elevator_code like concat('%', #{elevatorCode}, '%')
+            </if>
             <if test="communityId != null">
                 and b.community_id = #{communityId}
             </if>

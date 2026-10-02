@@ -247,7 +247,8 @@ public class InspectionService
         {
             noticeService.sendToRole(LoginUserUtil.ROLE_PROPERTY, "巡检发现异常",
                     String.format("电梯【%s】巡检发现 %d 项异常：%s",
-                            exist.getElevatorCode(), abnormalCount, abnormalSb.toString()), record.getRecordId());
+                            exist.getElevatorCode(), abnormalCount, abnormalSb.toString()), record.getRecordId(),
+                    NoticeService.BIZ_INSPECTION);
         }
         return rows;
     }
@@ -376,7 +377,7 @@ public class InspectionService
                         String.format("电梯【%s】的%s任务已生成，请按时执行",
                                 plan.getElevatorCode() == null ? String.valueOf(plan.getElevatorId()) : plan.getElevatorCode(),
                                 MaintainPlanService.defaultTemplateOf(plan.getMaintainType())),
-                        record.getRecordId());
+                        record.getRecordId(), NoticeService.BIZ_INSPECTION);
             }
             count++;
         }

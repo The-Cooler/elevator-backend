@@ -1155,6 +1155,7 @@ create table elevator_notice (
   title             varchar(200)    not null                   comment '消息标题',
   content           varchar(500)    default ''                 comment '消息内容',
   biz_id            bigint(20)      default null               comment '关联业务ID',
+  biz_type          varchar(20)     default ''                 comment '关联业务类型（order报修工单 inspection巡检记录 plan维保计划 空无关联），供前端跳转用',
   receiver_id       bigint(20)      not null                   comment '接收人ID',
   is_read           char(1)         default '0'                comment '是否已读（0未读 1已读）',
   read_time         datetime                                   comment '阅读时间',

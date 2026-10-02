@@ -187,7 +187,7 @@ public class RepairOrderService
         // 通知物业
         noticeService.sendToRole(LoginUserUtil.ROLE_PROPERTY, "新的故障报修",
                 String.format("电梯【%s】报修：%s", elevator.getElevatorCode(), repairOrder.getFaultDesc()),
-                repairOrder.getOrderId());
+                repairOrder.getOrderId(), NoticeService.BIZ_ORDER);
 
         // 把已上传的证据绑定到工单
         if (repairOrder.getEvidenceList() != null && !repairOrder.getEvidenceList().isEmpty())
@@ -240,7 +240,8 @@ public class RepairOrderService
         orderStatusLogService.record(orderId, order.getOrderStatus(), OrderStatusUtil.REJECTED,
                 "reject", rejectReason);
         noticeService.sendToUser(order.getUserId(), "报修被驳回",
-                "您的报修单【" + order.getOrderNo() + "】被驳回：" + rejectReason, orderId);
+                "您的报修单【" + order.getOrderNo() + "】被驳回：" + rejectReason, orderId,
+                NoticeService.BIZ_ORDER);
         return rows;
     }
 
@@ -293,7 +294,8 @@ public class RepairOrderService
         orderStatusLogService.record(orderId, order.getOrderStatus(), OrderStatusUtil.CONFIRMED,
                 "confirm", "业主确认故障已消除，工单闭环");
         noticeService.sendToUser(order.getAssigneeId(), "工单已确认完成",
-                "工单【" + order.getOrderNo() + "】业主已确认完成", orderId);
+                "工单【" + order.getOrderNo() + "】业主已确认完成", orderId,
+                NoticeService.BIZ_ORDER);
         return rows;
     }
 
@@ -316,7 +318,8 @@ public class RepairOrderService
         orderStatusLogService.record(orderId, order.getOrderStatus(), OrderStatusUtil.APPEALED,
                 "appeal", StringUtils.isEmpty(reason) ? "业主提交申诉" : reason);
         noticeService.sendToRole(LoginUserUtil.ROLE_PROPERTY, "业主申诉待处理",
-                "工单【" + order.getOrderNo() + "】业主提交申诉，请处理", orderId);
+                "工单【" + order.getOrderNo() + "】业主提交申诉，请处理", orderId,
+                NoticeService.BIZ_ORDER);
         return rows;
     }
 

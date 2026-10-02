@@ -10,6 +10,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="title"       column="title"        />
         <result property="content"     column="content"      />
         <result property="bizId"       column="biz_id"       />
+        <result property="bizType"     column="biz_type"     />
         <result property="receiverId"  column="receiver_id"  />
         <result property="isRead"      column="is_read"      />
         <result property="readTime"    column="read_time"    />
@@ -17,7 +18,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <select id="selectElevatorNoticeList" parameterType="com.ruoyi.elevator.domain.ElevatorNotice" resultMap="ElevatorNoticeResult">
-        select notice_id, notice_type, title, content, biz_id, receiver_id, is_read, read_time, create_time
+        select notice_id, notice_type, title, content, biz_id, biz_type, receiver_id, is_read, read_time, create_time
         from elevator_notice
         <where>
             <if test="receiverId != null">and receiver_id = #{receiverId}</if>
@@ -32,8 +33,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <insert id="insertElevatorNotice" parameterType="com.ruoyi.elevator.domain.ElevatorNotice" useGeneratedKeys="true" keyProperty="noticeId">
-        insert into elevator_notice (notice_type, title, content, biz_id, receiver_id, is_read, create_time)
-        values (#{noticeType}, #{title}, #{content}, #{bizId}, #{receiverId}, '0', sysdate())
+        insert into elevator_notice (notice_type, title, content, biz_id, biz_type, receiver_id, is_read, create_time)
+        values (#{noticeType}, #{title}, #{content}, #{bizId}, #{bizType}, #{receiverId}, '0', sysdate())
     </insert>
 
     <update id="updateRead">

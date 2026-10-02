@@ -209,7 +209,7 @@ public class WarningService
                     order.getElevatorCode() == null ? "" : order.getElevatorCode(),
                     order.getReporterName() == null ? "" : order.getReporterName());
             count += pushWarning(rule, "order_timeout", order.getOrderId(), order.getOrderNo(),
-                    content, order.getElevatorId());
+                    content, order.getElevatorId(), NoticeService.BIZ_ORDER);
         }
         return count;
     }
@@ -248,7 +248,8 @@ public class WarningService
                     MaintainPlanService.defaultTemplateOf(plan.getMaintainType()),
                     plan.getPlanName(), timeDesc);
             count += pushWarning(rule, "maintain_due", plan.getPlanId(),
-                    String.valueOf(plan.getPlanId()), content, plan.getElevatorId());
+                    String.valueOf(plan.getPlanId()), content, plan.getElevatorId(),
+                    NoticeService.BIZ_PLAN);
         }
         return count;
     }
@@ -275,7 +276,7 @@ public class WarningService
      * 生成预警记录并推送给规则指定的角色
      */
     private int pushWarning(WarningRule rule, String warningType, Long bizId, String bizNo,
-                            String content, Long elevatorId)
+                            String content, Long elevatorId, String bizType)
     {
         String notifyRoles = rule.getNotifyRoles();
         if (StringUtils.isEmpty(notifyRoles))
@@ -306,7 +307,7 @@ public class WarningService
                 warningMapper.insertWarningInfo(info);
 
                 // 站内通知同步推一条
-                noticeService.sendToUser(receiverId, rule.getRuleName(), content, bizId);
+                noticeService.sendToUser(receiverId, rule.getRuleName(), content, bizId, bizType);
                 count++;
             }
         }
