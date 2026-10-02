@@ -474,11 +474,28 @@ public class InspectionService
     }
 
     /**
-     * 生成巡检工单编号，格式 XJ + yyyyMMddHHmmss
+     * 编号序号与所属秒级时间戳
+     * generateInspectionTasks 会在一次循环里连续生成多条，
+     * 只精确到秒的时间戳会让它们撞上 uk_record_no 唯一索引，
+     * 该批次处于同一事务中，一旦重复会整批回滚，一条都生成不出来
      */
-    private String buildRecordNo()
+    private int recordNoSeq = 0;
+    private String lastRecordNoSecond = "";
+
+    /**
+     * 生成巡检工单编号，格式 XJ + yyyyMMddHHmmss + 三位序号
+     * 序号在同一秒内递增，跨秒自动归零，保证批量生成时编号唯一
+     */
+    private synchronized String buildRecordNo()
     {
-        return "XJ" + DateUtils.dateTimeNow("yyyyMMddHHmmss");
+        String second = DateUtils.dateTimeNow("yyyyMMddHHmmss");
+        if (!second.equals(lastRecordNoSecond))
+        {
+            lastRecordNoSecond = second;
+            recordNoSeq = 0;
+        }
+        recordNoSeq++;
+        return String.format("XJ%s%03d", second, recordNoSeq);
     }
 
     /**
