@@ -104,6 +104,8 @@ public class SecurityConfig
                     // 用户端认证接口：图形验证码、注册、账号密码登录、手机号密码登录允许匿名访问
                     .requestMatchers("/basic/auth/captcha", "/basic/auth/login", "/basic/auth/register",
                             "/basic/auth/phoneLogin").permitAll()
+                    // 注册页需要小区列表做所属小区选择，该数据为公开信息，允许匿名读取
+                    .requestMatchers("/common/cascade/community/list").permitAll()
                     // 静态资源，可匿名访问
                     .requestMatchers(HttpMethod.GET, "/", "/*.html", "/**.html", "/**.css", "/**.js", "/profile/**").permitAll()
                     .requestMatchers("/swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**", "/druid/**").permitAll()
