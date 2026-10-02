@@ -67,7 +67,8 @@ public class FaultLevelController extends BaseController
     @PutMapping("/changeLevel")
     public AjaxResult changeLevel(@RequestBody RepairOrder repairOrder)
     {
-        return toAjax(repairOrderService.changeLevel(repairOrder.getOrderId(), repairOrder.getFaultLevel()));
+        return toAjax(repairOrderService.changeLevel(repairOrder.getOrderId(),
+                repairOrder.getFaultLevel(), repairOrder.getRemark()));
     }
 
     /**

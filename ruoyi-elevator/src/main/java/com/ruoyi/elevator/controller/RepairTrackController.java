@@ -85,6 +85,17 @@ public class RepairTrackController extends BaseController
     }
 
     /**
+     * 业主补充材料后重新提交被驳回的工单
+     * 对应论文 2.3.2 替代流程 2a
+     */
+    @PostMapping("/resubmit")
+    public AjaxResult resubmit(@RequestBody RepairOrder repairOrder)
+    {
+        return toAjax(repairOrderService.resubmit(repairOrder.getOrderId(),
+                repairOrder.getFaultDesc(), repairOrder.getFaultLevel(), repairOrder.getFaultType()));
+    }
+
+    /**
      * 查询工单全流程时间轴，管理端报修进度跟踪页使用
      */
     @GetMapping("/timeline/{orderId}")

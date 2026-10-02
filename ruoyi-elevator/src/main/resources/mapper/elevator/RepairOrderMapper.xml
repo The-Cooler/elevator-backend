@@ -311,6 +311,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <update id="updateRepairOrder" parameterType="com.ruoyi.elevator.domain.RepairOrder">
         update repair_order
         <set>
+            <if test="faultDesc != null and faultDesc != ''">fault_desc = #{faultDesc},</if>
+            <if test="faultType != null and faultType != ''">fault_type = #{faultType},</if>
             <if test="faultLevel != null and faultLevel != ''">fault_level = #{faultLevel},</if>
             <if test="orderStatus != null and orderStatus != ''">order_status = #{orderStatus},</if>
             <if test="assigneeId != null">assignee_id = #{assigneeId},</if>

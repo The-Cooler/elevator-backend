@@ -251,7 +251,14 @@ public class RepairOrderService
      * 物业调整故障等级，变更写入状态流转记录
      */
     @Transactional(rollbackFor = Exception.class)
-    public int changeLevel(Long orderId, String faultLevel)
+    /**
+     * 物业调整工单的故障等级
+     *
+     * @param orderId     工单ID
+     * @param faultLevel  调整后的等级，0 紧急 / 1 一般
+     * @param remark      调整原因，物业填写后写入流转记录，可为空
+     */
+    public int changeLevel(Long orderId, String faultLevel, String remark)
     {
         LoginUserUtil.checkPropertyOrAdmin();
         if (StringUtils.isEmpty(faultLevel))
@@ -267,8 +274,13 @@ public class RepairOrderService
         int rows = repairOrderMapper.updateRepairOrder(update);
 
         String levelName = "0".equals(faultLevel) ? "紧急" : "一般";
+        String logRemark = "故障等级调整为【" + levelName + "】";
+        if (StringUtils.isNotEmpty(remark))
+        {
+            logRemark = logRemark + "，原因：" + remark;
+        }
         orderStatusLogService.record(orderId, order.getOrderStatus(), order.getOrderStatus(),
-                "changeLevel", "故障等级调整为【" + levelName + "】");
+                "changeLevel", logRemark);
         return rows;
     }
 
@@ -323,8 +335,43 @@ public class RepairOrderService
         return rows;
     }
 
-    // ==================== 内部工具 ====================
+    /**
+     * 业主补充材料后重新提交被驳回的工单
+     * 对应论文 2.3.2 替代流程 2a：物业驳回并备注原因后，业主补充信息重新提交
+     *
+     * @param orderId      工单ID
+     * @param faultDesc    补充后的故障现象，为空则沿用原描述
+     * @param faultLevel   调整后的故障等级，为空则沿用原等级
+     * @param faultType    调整后的故障类型，为空则沿用原类型
+     */
+    public int resubmit(Long orderId, String faultDesc, String faultLevel, String faultType)
+    {
+        RepairOrder order = mustGetOrder(orderId);
+        checkOwnerOfOrder(order);
+        // 只有被驳回的工单需要业主重新提交
+        orderStatusLogService.assertTransition(order.getOrderStatus(), OrderStatusUtil.PENDING);
 
+        RepairOrder update = new RepairOrder();
+        update.setOrderId(orderId);
+        update.setOrderStatus(OrderStatusUtil.PENDING);
+        update.setFaultDesc(StringUtils.isEmpty(faultDesc) ? order.getFaultDesc() : faultDesc);
+        update.setFaultLevel(StringUtils.isEmpty(faultLevel) ? order.getFaultLevel() : faultLevel);
+        update.setFaultType(StringUtils.isEmpty(faultType) ? order.getFaultType() : faultType);
+        // 驳回原因清空，重新进入待处理
+        update.setRejectReason("");
+        update.setUpdateBy(LoginUserUtil.getUsername());
+        int rows = repairOrderMapper.updateRepairOrder(update);
+
+        orderStatusLogService.record(orderId, order.getOrderStatus(), OrderStatusUtil.PENDING,
+                "report", "业主补充信息后重新提交");
+        // 通知物业重新审核
+        noticeService.sendToRole(LoginUserUtil.ROLE_PROPERTY, "驳回工单已重新提交",
+                "工单【" + order.getOrderNo() + "】业主已补充信息并重新提交，请重新审核", orderId,
+                NoticeService.BIZ_ORDER);
+        return rows;
+    }
+
+    // ==================== 内部工具 ====================
     /**
      * 获取工单，不存在时抛出业务异常
      */
