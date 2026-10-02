@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.elevator.mapper.InspectionMapper">
+
+    <!-- ==================== 巡检记录 ==================== -->
+
+    <resultMap type="com.ruoyi.elevator.domain.InspectionRecord" id="InspectionRecordResult">
+        <id     property="recordId"        column="record_id"        />
+        <result property="recordNo"        column="record_no"        />
+        <result property="planId"          column="plan_id"          />
+        <result property="elevatorId"      column="elevator_id"      />
+        <result property="maintainType"    column="maintain_type"    />
+        <result property="planDate"        column="plan_date"        />
+        <result property="executorId"      column="executor_id"      />
+        <result property="clockInTime"     column="clock_in_time"    />
+        <result property="clockInLocation" column="clock_in_location" />
+        <result property="executeDate"     column="execute_date"     />
+        <result property="executeResult"   column="execute_result"   />
+        <result property="abnormalDesc"    column="abnormal_desc"    />
+        <result property="normalCount"     column="normal_count"     />
+        <result property="abnormalCount"   column="abnormal_count"   />
+        <result property="naCount"         column="na_count"         />
+        <result property="recordStatus"    column="record_status"    />
+        <result property="delFlag"         column="del_flag"         />
+        <result property="createBy"        column="create_by"        />
+        <result property="createTime"      column="create_time"      />
+        <result property="updateBy"        column="update_by"        />
+        <result property="updateTime"      column="update_time"      />
+        <result property="elevatorCode"    column="elevator_code"    />
+        <result property="communityName"   column="community_name"   />
+        <result property="buildingNo"      column="building_no"      />
+        <result property="unitNo"          column="unit_no"          />
+        <result property="executorName"    column="executor_name"    />
+    </resultMap>
+
+    <sql id="selectInspectionVo">
+        select r.record_id, r.record_no, r.plan_id, r.elevator_id, r.maintain_type, r.plan_date,
+               r.executor_id, r.clock_in_time, r.clock_in_location, r.execute_date, r.execute_result,
+               r.abnormal_desc, r.normal_count, r.abnormal_count, r.na_count, r.record_status,
+               r.del_flag, r.create_by, r.create_time, r.update_by, r.update_time,
+               e.elevator_code as elevator_code,
+               e.unit_no as unit_no,
+               b.building_no as building_no,
+               c.community_name as community_name,
+               u.nick_name as executor_name
+        from inspection_record r
+        left join elevator e on r.elevator_id = e.elevator_id
+        left join building b on e.building_id = b.building_id
+        left join community c on b.community_id = c.community_id
+        left join sys_user u on r.executor_id = u.user_id
+    </sql>
+
+    <select id="selectInspectionRecordList" parameterType="com.ruoyi.elevator.domain.InspectionRecord" resultMap="InspectionRecordResult">
+        <include refid="selectInspectionVo"/>
+        <where>
+            r.del_flag = '0'
+            <if test="recordNo != null and recordNo != ''">and r.record_no like concat('%', #{recordNo}, '%')</if>
+            <if test="planId != null">and r.plan_id = #{planId}</if>
+            <if test="elevatorId != null">and r.elevator_id = #{elevatorId}</if>
+            <if test="maintainType != null and maintainType != ''">and r.maintain_type = #{maintainType}</if>
+            <if test="recordStatus != null and recordStatus != ''">and r.record_status = #{recordStatus}</if>
+            <if test="executeResult != null and executeResult != ''">and r.execute_result = #{executeResult}</if>
+            <if test="queryExecutorId != null">and r.executor_id = #{queryExecutorId}</if>
+            <if test="executorId != null">and r.executor_id = #{executorId}</if>
+            <if test="communityId != null">and b.community_id = #{communityId}</if>
+            <if test="beginTime != null and beginTime != ''">and r.plan_date &gt;= #{beginTime}</if>
+            <if test="endTime != null and endTime != ''">and r.plan_date &lt;= #{endTime}</if>
+        </where>
+        order by r.plan_date desc, r.record_id desc
+    </select>
+
+    <select id="selectInspectionRecordById" parameterType="Long" resultMap="InspectionRecordResult">
+        <include refid="selectInspectionVo"/>
+        where r.record_id = #{recordId} and r.del_flag = '0'
+    </select>
+
+    <select id="checkRecordExists" resultType="int">
+        select count(1) from inspection_record
+        where del_flag = '0' and plan_id = #{planId} and plan_date = #{planDate}
+    </select>
+
+    <select id="selectInspectionStatByElevator" resultType="java.util.LinkedHashMap">
+        select count(1) as totalCount,
+               ifnull(sum(normal_count), 0) as normalSum,
+               ifnull(sum(normal_count + abnormal_count + na_count), 0) as itemSum
+        from inspection_record
+        where del_flag = '0' and elevator_id = #{elevatorId} and record_status = 'finished'
+        <if test="beginTime != null and beginTime != ''">and plan_date &gt;= #{beginTime}</if>
+        <if test="endTime != null and endTime != ''">and plan_date &lt;= #{endTime}</if>
+    </select>
+
+    <select id="selectInspectionCount" resultType="int">
+        select count(1) from inspection_record where del_flag = '0'
+    </select>
+
+    <insert id="insertInspectionRecord" parameterType="com.ruoyi.elevator.domain.InspectionRecord" useGeneratedKeys="true" keyProperty="recordId">
+        insert into inspection_record (
+            record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id,
+            record_status, execute_result, del_flag, create_by, create_time
+        ) values (
+            #{recordNo}, #{planId}, #{elevatorId}, #{maintainType}, #{planDate}, #{executorId},
+            ifnull(#{recordStatus}, 'pending'), ifnull(#{executeResult}, 'pending'), '0', #{createBy}, sysdate()
+        )
+    </insert>
+
+    <update id="updateInspectionRecord" parameterType="com.ruoyi.elevator.domain.InspectionRecord">
+        update inspection_record
+        <set>
+            <if test="executorId != null">executor_id = #{executorId},</if>
+            <if test="clockInTime != null">clock_in_time = #{clockInTime},</if>
+            <if test="clockInLocation != null">clock_in_location = #{clockInLocation},</if>
+            <if test="executeDate != null">execute_date = #{executeDate},</if>
+            <if test="executeResult != null and executeResult != ''">execute_result = #{executeResult},</if>
+            <if test="abnormalDesc != null">abnormal_desc = #{abnormalDesc},</if>
+            <if test="normalCount != null">normal_count = #{normalCount},</if>
+            <if test="abnormalCount != null">abnormal_count = #{abnormalCount},</if>
+            <if test="naCount != null">na_count = #{naCount},</if>
+            <if test="recordStatus != null and recordStatus != ''">record_status = #{recordStatus},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where record_id = #{recordId}
+    </update>
+
+    <!-- ==================== 检查项结果 ==================== -->
+
+    <resultMap type="com.ruoyi.elevator.domain.InspectionItemResult" id="InspectionItemResultMap">
+        <id     property="resultId"      column="result_id"      />
+        <result property="recordId"      column="record_id"      />
+        <result property="itemId"        column="item_id"        />
+        <result property="itemName"      column="item_name"      />
+        <result property="itemCategory"  column="item_category"  />
+        <result property="checkResult"   column="check_result"   />
+        <result property="abnormalDesc"  column="abnormal_desc"  />
+        <result property="fileId"        column="file_id"        />
+        <result property="orderNum"      column="order_num"      />
+        <result property="checkStandard" column="check_standard" />
+        <result property="fileName"      column="file_name"      />
+    </resultMap>
+
+    <select id="selectItemResultsByRecordId" parameterType="Long" resultMap="InspectionItemResultMap">
+        select ir.result_id, ir.record_id, ir.item_id, ir.item_name, ir.item_category,
+               ir.check_result, ir.abnormal_desc, ir.file_id, ir.order_num,
+               mi.check_standard as check_standard,
+               f.file_name as file_name
+        from inspection_item_result ir
+        left join maintain_item mi on ir.item_id = mi.item_id
+        left join sys_file f on ir.file_id = f.file_id and f.del_flag = '0'
+        where ir.record_id = #{recordId}
+        order by ir.order_num, ir.result_id
+    </select>
+
+    <insert id="batchInsertItemResults">
+        insert into inspection_item_result (
+            record_id, item_id, item_name, item_category, check_result,
+            abnormal_desc, file_id, order_num
+        ) values
+        <foreach item="item" collection="list" separator=",">
+            (#{item.recordId}, #{item.itemId}, #{item.itemName}, #{item.itemCategory}, #{item.checkResult},
+             #{item.abnormalDesc}, #{item.fileId}, #{item.orderNum})
+        </foreach>
+    </insert>
+
+    <delete id="deleteItemResultsByRecordId" parameterType="Long">
+        delete from inspection_item_result where record_id = #{recordId}
+    </delete>
+
+    <!-- ==================== 维保档案 ==================== -->
+
+    <resultMap type="com.ruoyi.elevator.domain.MaintainArchive" id="MaintainArchiveResult">
+        <id     property="archiveId"     column="archive_id"     />
+        <result property="elevatorId"    column="elevator_id"    />
+        <result property="archiveType"   column="archive_type"   />
+        <result property="maintainType"  column="maintain_type"  />
+        <result property="bizId"         column="biz_id"         />
+        <result property="archiveTime"   column="archive_time"   />
+        <result property="summary"       column="summary"        />
+        <result property="executorName"  column="executor_name"  />
+        <result property="executeDate"   column="execute_date"   />
+        <result property="isAbnormal"    column="is_abnormal"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="elevatorCode"  column="elevator_code"  />
+        <result property="communityName" column="community_name" />
+        <result property="buildingNo"    column="building_no"    />
+        <result property="unitNo"        column="unit_no"        />
+    </resultMap>
+
+    <sql id="selectArchiveVo">
+        select a.archive_id, a.elevator_id, a.archive_type, a.maintain_type, a.biz_id,
+               a.archive_time, a.summary, a.executor_name, a.execute_date, a.is_abnormal, a.create_time,
+               e.elevator_code as elevator_code,
+               e.unit_no as unit_no,
+               b.building_no as building_no,
+               b.community_id as communityId,
+               c.community_name as community_name
+        from maintain_archive a
+        left join elevator e on a.elevator_id = e.elevator_id
+        left join building b on e.building_id = b.building_id
+        left join community c on b.community_id = c.community_id
+    </sql>
+
+    <select id="selectArchiveList" parameterType="com.ruoyi.elevator.domain.MaintainArchive" resultMap="MaintainArchiveResult">
+        <include refid="selectArchiveVo"/>
+        <where>
+            <if test="elevatorId != null">and a.elevator_id = #{elevatorId}</if>
+            <if test="archiveType != null and archiveType != ''">and a.archive_type = #{archiveType}</if>
+            <if test="maintainType != null and maintainType != ''">and a.maintain_type = #{maintainType}</if>
+            <if test="executorName != null and executorName != ''">and a.executor_name like concat('%', #{executorName}, '%')</if>
+            <if test="communityId != null">and b.community_id = #{communityId}</if>
+            <if test="elevatorCode != null and elevatorCode != ''">and e.elevator_code like concat('%', #{elevatorCode}, '%')</if>
+            <if test="beginTime != null and beginTime != ''">and a.execute_date &gt;= #{beginTime}</if>
+            <if test="endTime != null and endTime != ''">and a.execute_date &lt;= #{endTime}</if>
+        </where>
+        order by a.execute_date desc, a.archive_id desc
+    </select>
+
+    <select id="selectArchiveByElevator" parameterType="Long" resultMap="MaintainArchiveResult">
+        <include refid="selectArchiveVo"/>
+        where a.elevator_id = #{elevatorId}
+        order by a.execute_date desc, a.archive_id desc
+    </select>
+
+    <select id="selectArchiveById" parameterType="Long" resultMap="MaintainArchiveResult">
+        <include refid="selectArchiveVo"/>
+        where a.archive_id = #{archiveId}
+    </select>
+
+    <select id="checkArchiveExists" resultType="int">
+        select count(1) from maintain_archive
+        where archive_type = #{archiveType} and biz_id = #{bizId}
+    </select>
+
+    <insert id="insertArchive" parameterType="com.ruoyi.elevator.domain.MaintainArchive" useGeneratedKeys="true" keyProperty="archiveId">
+        insert into maintain_archive (
+            elevator_id, archive_type, maintain_type, biz_id, archive_time,
+            summary, executor_name, execute_date, is_abnormal, create_time
+        ) values (
+            #{elevatorId}, #{archiveType}, #{maintainType}, #{bizId}, sysdate(),
+            #{summary}, #{executorName}, #{executeDate}, ifnull(#{isAbnormal}, '0'), sysdate()
+        )
+    </insert>
+
+</mapper>

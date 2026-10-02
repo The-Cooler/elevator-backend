@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.elevator.mapper.WarningMapper">
+
+    <!-- ==================== 预警规则 ==================== -->
+
+    <resultMap type="com.ruoyi.elevator.domain.WarningRule" id="WarningRuleResult">
+        <id     property="ruleId"          column="rule_id"          />
+        <result property="ruleName"        column="rule_name"        />
+        <result property="ruleType"        column="rule_type"        />
+        <result property="bizSubType"      column="biz_sub_type"     />
+        <result property="thresholdValue"  column="threshold_value"  />
+        <result property="thresholdUnit"   column="threshold_unit"   />
+        <result property="notifyRoles"     column="notify_roles"     />
+        <result property="enabled"         column="enabled"          />
+        <result property="repeatInterval"  column="repeat_interval"  />
+        <result property="createBy"        column="create_by"        />
+        <result property="createTime"      column="create_time"      />
+        <result property="updateBy"        column="update_by"        />
+        <result property="updateTime"      column="update_time"      />
+        <result property="remark"          column="remark"           />
+    </resultMap>
+
+    <sql id="selectWarningRuleVo">
+        select rule_id, rule_name, rule_type, biz_sub_type, threshold_value, threshold_unit,
+               notify_roles, enabled, repeat_interval, create_by, create_time,
+               update_by, update_time, remark
+        from warning_rule
+    </sql>
+
+    <select id="selectWarningRuleList" parameterType="com.ruoyi.elevator.domain.WarningRule" resultMap="WarningRuleResult">
+        <include refid="selectWarningRuleVo"/>
+        <where>
+            <if test="ruleName != null and ruleName != ''">and rule_name like concat('%', #{ruleName}, '%')</if>
+            <if test="ruleType != null and ruleType != ''">and rule_type = #{ruleType}</if>
+            <if test="enabled != null and enabled != ''">and enabled = #{enabled}</if>
+        </where>
+        order by rule_type, rule_id
+    </select>
+
+    <select id="selectWarningRuleById" parameterType="Long" resultMap="WarningRuleResult">
+        <include refid="selectWarningRuleVo"/>
+        where rule_id = #{ruleId}
+    </select>
+
+    <select id="selectEnabledRules" resultMap="WarningRuleResult">
+        <include refid="selectWarningRuleVo"/>
+        where enabled = '0'
+        order by rule_type, rule_id
+    </select>
+
+    <insert id="insertWarningRule" parameterType="com.ruoyi.elevator.domain.WarningRule" useGeneratedKeys="true" keyProperty="ruleId">
+        insert into warning_rule (
+            rule_name, rule_type, biz_sub_type, threshold_value, threshold_unit,
+            notify_roles, enabled, repeat_interval, create_by, create_time, remark
+        ) values (
+            #{ruleName}, #{ruleType}, #{bizSubType}, #{thresholdValue}, ifnull(#{thresholdUnit}, 'minute'),
+            #{notifyRoles}, ifnull(#{enabled}, '0'), ifnull(#{repeatInterval}, 0), #{createBy}, sysdate(), #{remark}
+        )
+    </insert>
+
+    <update id="updateWarningRule" parameterType="com.ruoyi.elevator.domain.WarningRule">
+        update warning_rule
+        <set>
+            <if test="ruleName != null and ruleName != ''">rule_name = #{ruleName},</if>
+            <if test="ruleType != null and ruleType != ''">rule_type = #{ruleType},</if>
+            <if test="bizSubType != null">biz_sub_type = #{bizSubType},</if>
+            <if test="thresholdValue != null">threshold_value = #{thresholdValue},</if>
+            <if test="thresholdUnit != null">threshold_unit = #{thresholdUnit},</if>
+            <if test="notifyRoles != null">notify_roles = #{notifyRoles},</if>
+            <if test="enabled != null and enabled != ''">enabled = #{enabled},</if>
+            <if test="repeatInterval != null">repeat_interval = #{repeatInterval},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = sysdate()
+        </set>
+        where rule_id = #{ruleId}
+    </update>
+
+    <update id="updateRuleEnabled">
+        update warning_rule set enabled = #{enabled}, update_time = sysdate() where rule_id = #{ruleId}
+    </update>
+
+    <delete id="deleteWarningRuleByIds">
+        delete from warning_rule where rule_id in
+        <foreach item="ruleId" collection="array" open="(" separator="," close=")">
+            #{ruleId}
+        </foreach>
+    </delete>
+
+    <!-- ==================== 预警信息 ==================== -->
+
+    <resultMap type="com.ruoyi.elevator.domain.WarningInfo" id="WarningInfoResult">
+        <id     property="warningId"       column="warning_id"       />
+        <result property="ruleId"          column="rule_id"          />
+        <result property="warningType"     column="warning_type"     />
+        <result property="bizSubType"      column="biz_sub_type"     />
+        <result property="bizId"           column="biz_id"           />
+        <result property="bizNo"           column="biz_no"           />
+        <result property="warningContent"  column="warning_content"  />
+        <result property="elevatorId"      column="elevator_id"      />
+        <result property="receiverId"      column="receiver_id"      />
+        <result property="receiverRole"    column="receiver_role"    />
+        <result property="isRead"          column="is_read"          />
+        <result property="readTime"        column="read_time"        />
+        <result property="warningTime"     column="warning_time"     />
+        <result property="createTime"      column="create_time"      />
+        <result property="elevatorCode"    column="elevator_code"    />
+        <result property="communityName"   column="community_name"   />
+        <result property="receiverName"    column="receiver_name"    />
+    </resultMap>
+
+    <sql id="selectWarningInfoVo">
+        select w.warning_id, w.rule_id, w.warning_type, w.biz_sub_type, w.biz_id, w.biz_no,
+               w.warning_content, w.elevator_id, w.receiver_id, w.receiver_role,
+               w.is_read, w.read_time, w.warning_time, w.create_time,
+               e.elevator_code as elevator_code,
+               c.community_name as community_name,
+               u.nick_name as receiver_name
+        from warning_info w
+        left join elevator e on w.elevator_id = e.elevator_id
+        left join building b on e.building_id = b.building_id
+        left join community c on b.community_id = c.community_id
+        left join sys_user u on w.receiver_id = u.user_id
+    </sql>
+
+    <select id="selectWarningInfoList" parameterType="com.ruoyi.elevator.domain.WarningInfo" resultMap="WarningInfoResult">
+        <include refid="selectWarningInfoVo"/>
+        <where>
+            <if test="warningType != null and warningType != ''">and w.warning_type = #{warningType}</if>
+            <if test="bizSubType != null and bizSubType != ''">and w.biz_sub_type = #{bizSubType}</if>
+            <if test="isRead != null and isRead != ''">and w.is_read = #{isRead}</if>
+            <if test="queryReceiverId != null">and w.receiver_id = #{queryReceiverId}</if>
+            <if test="receiverId != null">and w.receiver_id = #{receiverId}</if>
+            <if test="elevatorCode != null and elevatorCode != ''">and e.elevator_code like concat('%', #{elevatorCode}, '%')</if>
+            <if test="beginTime != null and beginTime != ''">and w.warning_time &gt;= #{beginTime}</if>
+            <if test="endTime != null and endTime != ''">and w.warning_time &lt;= #{endTime}</if>
+        </where>
+        order by w.warning_time desc, w.warning_id desc
+    </select>
+
+    <select id="selectWarningInfoById" parameterType="Long" resultMap="WarningInfoResult">
+        <include refid="selectWarningInfoVo"/>
+        where w.warning_id = #{warningId}
+    </select>
+
+    <select id="countUnread" parameterType="Long" resultType="int">
+        select count(1) from warning_info where receiver_id = #{receiverId} and is_read = '0'
+    </select>
+
+    <select id="countByBizAndRule" resultType="int">
+        select count(1) from warning_info where rule_id = #{ruleId} and biz_id = #{bizId}
+    </select>
+
+    <select id="countByBizAndRuleWithin" resultType="int">
+        select count(1) from warning_info
+        where rule_id = #{ruleId} and biz_id = #{bizId}
+          and warning_time &gt;= date_sub(sysdate(), interval #{repeatIntervalMinutes} minute)
+    </select>
+
+    <insert id="insertWarningInfo" parameterType="com.ruoyi.elevator.domain.WarningInfo" useGeneratedKeys="true" keyProperty="warningId">
+        insert into warning_info (
+            rule_id, warning_type, biz_sub_type, biz_id, biz_no, warning_content,
+            elevator_id, receiver_id, receiver_role, is_read, warning_time, create_time
+        ) values (
+            #{ruleId}, #{warningType}, #{bizSubType}, #{bizId}, #{bizNo}, #{warningContent},
+            #{elevatorId}, #{receiverId}, #{receiverRole}, '0', sysdate(), sysdate()
+        )
+    </insert>
+
+    <update id="updateRead">
+        update warning_info set is_read = '1', read_time = sysdate()
+        where receiver_id = #{receiverId} and warning_id in
+        <foreach item="warningId" collection="warningIds" open="(" separator="," close=")">
+            #{warningId}
+        </foreach>
+    </update>
+
+    <update id="updateAllRead" parameterType="Long">
+        update warning_info set is_read = '1', read_time = sysdate()
+        where receiver_id = #{receiverId} and is_read = '0'
+    </update>
+
+</mapper>

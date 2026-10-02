@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.elevator.mapper.MaintainPlanMapper">
+
+    <resultMap type="com.ruoyi.elevator.domain.MaintainPlan" id="MaintainPlanResult">
+        <id     property="planId"        column="plan_id"        />
+        <result property="planName"      column="plan_name"      />
+        <result property="elevatorId"    column="elevator_id"    />
+        <result property="maintainType"  column="maintain_type"  />
+        <result property="cycleDays"     column="cycle_days"     />
+        <result property="templateName"  column="template_name"  />
+        <result property="startDate"     column="start_date"     />
+        <result property="endDate"       column="end_date"       />
+        <result property="nextDate"      column="next_date"      />
+        <result property="lastDate"      column="last_date"      />
+        <result property="ownerId"       column="owner_id"       />
+        <result property="planStatus"    column="plan_status"    />
+        <result property="expectCount"   column="expect_count"   />
+        <result property="finishCount"   column="finish_count"   />
+        <result property="delFlag"       column="del_flag"       />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"        column="remark"         />
+        <result property="elevatorCode"  column="elevator_code"  />
+        <result property="buildingNo"    column="building_no"    />
+        <result property="unitNo"        column="unit_no"        />
+        <result property="communityName" column="community_name" />
+        <result property="communityId"   column="community_id"   />
+        <result property="ownerName"     column="owner_name"     />
+        <result property="remainingDays" column="remaining_days" />
+    </resultMap>
+
+    <sql id="selectMaintainPlanVo">
+        select p.plan_id, p.plan_name, p.elevator_id, p.maintain_type, p.cycle_days, p.template_name,
+               p.start_date, p.end_date, p.next_date, p.last_date, p.owner_id, p.plan_status,
+               p.expect_count, p.finish_count, p.del_flag, p.create_by, p.create_time,
+               p.update_by, p.update_time, p.remark,
+               e.elevator_code as elevator_code,
+               e.unit_no as unit_no,
+               b.building_no as building_no,
+               b.community_id as community_id,
+               c.community_name as community_name,
+               u.nick_name as owner_name,
+               timestampdiff(day, sysdate(), p.next_date) as remaining_days
+        from maintain_plan p
+        left join elevator e on p.elevator_id = e.elevator_id
+        left join building b on e.building_id = b.building_id
+        left join community c on b.community_id = c.community_id
+        left join sys_user u on p.owner_id = u.user_id
+    </sql>
+
+    <select id="selectMaintainPlanList" parameterType="com.ruoyi.elevator.domain.MaintainPlan" resultMap="MaintainPlanResult">
+        <include refid="selectMaintainPlanVo"/>
+        <where>
+            p.del_flag = '0'
+            <if test="planName != null and planName != ''">
+                and p.plan_name like concat('%', #{planName}, '%')
+            </if>
+            <if test="elevatorId != null">and p.elevator_id = #{elevatorId}</if>
+            <if test="maintainType != null and maintainType != ''">and p.maintain_type = #{maintainType}</if>
+            <if test="planStatus != null and planStatus != ''">and p.plan_status = #{planStatus}</if>
+            <if test="communityId != null">and b.community_id = #{communityId}</if>
+            <if test="ownerId != null">and p.owner_id = #{ownerId}</if>
+        </where>
+        order by p.next_date asc, p.plan_id
+    </select>
+
+    <select id="selectMaintainPlanById" parameterType="Long" resultMap="MaintainPlanResult">
+        <include refid="selectMaintainPlanVo"/>
+        where p.plan_id = #{planId} and p.del_flag = '0'
+    </select>
+
+    <select id="selectDuePlans" resultMap="MaintainPlanResult">
+        <include refid="selectMaintainPlanVo"/>
+        where p.del_flag = '0'
+          and p.plan_status = '0'
+          and p.next_date is not null
+          and p.next_date &lt;= sysdate()
+          and (p.end_date is null or p.end_date &gt;= sysdate())
+        order by p.next_date
+    </select>
+
+    <select id="selectDueSoonPlans" resultMap="MaintainPlanResult">
+        <include refid="selectMaintainPlanVo"/>
+        where p.del_flag = '0'
+          and p.plan_status = '0'
+          and p.next_date is not null
+          and p.next_date &lt;= date_add(sysdate(), interval #{dueSoonDays} day)
+          and (p.end_date is null or p.end_date &gt;= sysdate())
+        order by p.next_date
+    </select>
+
+    <select id="checkPlanUnique" resultType="int">
+        select count(1) from maintain_plan
+        where del_flag = '0' and elevator_id = #{elevatorId}
+          and maintain_type = #{maintainType} and plan_status = '0'
+        <if test="planId != null">and plan_id != #{planId}</if>
+    </select>
+
+    <select id="selectPlanStatByElevator" resultType="java.util.LinkedHashMap">
+        select ifnull(sum(expect_count), 0) as expectCount,
+               ifnull(sum(finish_count), 0) as finishCount
+        from maintain_plan
+        where del_flag = '0' and elevator_id = #{elevatorId}
+    </select>
+
+    <select id="selectMaintainPlanCount" resultType="int">
+        select count(1) from maintain_plan where del_flag = '0'
+    </select>
+
+    <insert id="insertMaintainPlan" parameterType="com.ruoyi.elevator.domain.MaintainPlan" useGeneratedKeys="true" keyProperty="planId">
+        insert into maintain_plan (
+            plan_name, elevator_id, maintain_type, cycle_days, template_name,
+            start_date, end_date, next_date, last_date, owner_id, plan_status,
+            expect_count, finish_count, del_flag, create_by, create_time, remark
+        ) values (
+            #{planName}, #{elevatorId}, #{maintainType}, #{cycleDays}, #{templateName},
+            #{startDate}, #{endDate}, #{nextDate}, #{lastDate}, #{ownerId}, '0',
+            ifnull(#{expectCount}, 0), ifnull(#{finishCount}, 0), '0', #{createBy}, sysdate(), #{remark}
+        )
+    </insert>
+
+    <update id="updateMaintainPlan" parameterType="com.ruoyi.elevator.domain.MaintainPlan">
+        update maintain_plan
+        <set>
+            <if test="planName != null and planName != ''">plan_name = #{planName},</if>
+            <if test="elevatorId != null">elevator_id = #{elevatorId},</if>
+            <if test="maintainType != null and maintainType != ''">maintain_type = #{maintainType},</if>
+            <if test="cycleDays != null">cycle_days = #{cycleDays},</if>
+            <if test="templateName != null">template_name = #{templateName},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="nextDate != null">next_date = #{nextDate},</if>
+            <if test="lastDate != null">last_date = #{lastDate},</if>
+            <if test="ownerId != null">owner_id = #{ownerId},</if>
+            <if test="planStatus != null and planStatus != ''">plan_status = #{planStatus},</if>
+            <if test="expectCount != null">expect_count = #{expectCount},</if>
+            <if test="finishCount != null">finish_count = #{finishCount},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = sysdate()
+        </set>
+        where plan_id = #{planId}
+    </update>
+
+    <update id="updatePlanAfterExecute">
+        update maintain_plan
+        set last_date = #{lastDate},
+            next_date = #{nextDate},
+            finish_count = finish_count + 1,
+            expect_count = expect_count + 1,
+            update_time = sysdate()
+        where plan_id = #{planId}
+    </update>
+
+    <update id="deleteMaintainPlanByIds">
+        update maintain_plan set del_flag = '2' where plan_id in
+        <foreach item="planId" collection="array" open="(" separator="," close=")">
+            #{planId}
+        </foreach>
+    </update>
+
+    <!-- ==================== 检查项模板 ==================== -->
+
+    <resultMap type="com.ruoyi.elevator.domain.MaintainItem" id="MaintainItemResult">
+        <id     property="itemId"         column="item_id"         />
+        <result property="templateName"   column="template_name"   />
+        <result property="maintainType"   column="maintain_type"   />
+        <result property="itemName"       column="item_name"       />
+        <result property="itemCategory"   column="item_category"   />
+        <result property="checkStandard"  column="check_standard"  />
+        <result property="orderNum"       column="order_num"       />
+        <result property="status"         column="status"          />
+        <result property="createBy"       column="create_by"       />
+        <result property="createTime"     column="create_time"     />
+        <result property="updateBy"       column="update_by"       />
+        <result property="updateTime"     column="update_time"     />
+    </resultMap>
+
+    <sql id="selectMaintainItemVo">
+        select item_id, template_name, maintain_type, item_name, item_category,
+               check_standard, order_num, status, create_by, create_time, update_by, update_time
+        from maintain_item
+    </sql>
+
+    <select id="selectMaintainItemList" parameterType="com.ruoyi.elevator.domain.MaintainItem" resultMap="MaintainItemResult">
+        <include refid="selectMaintainItemVo"/>
+        <where>
+            <if test="templateName != null and templateName != ''">and template_name like concat('%', #{templateName}, '%')</if>
+            <if test="maintainType != null and maintainType != ''">and maintain_type = #{maintainType}</if>
+            <if test="itemName != null and itemName != ''">and item_name like concat('%', #{itemName}, '%')</if>
+            <if test="itemCategory != null and itemCategory != ''">and item_category = #{itemCategory}</if>
+            <if test="status != null and status != ''">and status = #{status}</if>
+        </where>
+        order by maintain_type, order_num, item_id
+    </select>
+
+    <select id="selectItemsByTemplate" resultMap="MaintainItemResult">
+        <include refid="selectMaintainItemVo"/>
+        where status = '0'
+        <if test="maintainType != null and maintainType != ''">and maintain_type = #{maintainType}</if>
+        <if test="templateName != null and templateName != ''">and template_name = #{templateName}</if>
+        order by order_num, item_id
+    </select>
+
+    <select id="selectMaintainItemById" parameterType="Long" resultMap="MaintainItemResult">
+        <include refid="selectMaintainItemVo"/>
+        where item_id = #{itemId}
+    </select>
+
+    <insert id="insertMaintainItem" parameterType="com.ruoyi.elevator.domain.MaintainItem" useGeneratedKeys="true" keyProperty="itemId">
+        insert into maintain_item (
+            template_name, maintain_type, item_name, item_category, check_standard,
+            order_num, status, create_by, create_time
+        ) values (
+            #{templateName}, #{maintainType}, #{itemName}, #{itemCategory}, #{checkStandard},
+            ifnull(#{orderNum}, 0), ifnull(#{status}, '0'), #{createBy}, sysdate()
+        )
+    </insert>
+
+    <update id="updateMaintainItem" parameterType="com.ruoyi.elevator.domain.MaintainItem">
+        update maintain_item
+        <set>
+            <if test="templateName != null and templateName != ''">template_name = #{templateName},</if>
+            <if test="maintainType != null and maintainType != ''">maintain_type = #{maintainType},</if>
+            <if test="itemName != null and itemName != ''">item_name = #{itemName},</if>
+            <if test="itemCategory != null">item_category = #{itemCategory},</if>
+            <if test="checkStandard != null">check_standard = #{checkStandard},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where item_id = #{itemId}
+    </update>
+
+    <delete id="deleteMaintainItemByIds">
+        delete from maintain_item where item_id in
+        <foreach item="itemId" collection="array" open="(" separator="," close=")">
+            #{itemId}
+        </foreach>
+    </delete>
+
+</mapper>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.elevator.mapper.ElevatorFileMapper">
+
+    <resultMap type="com.ruoyi.elevator.domain.ElevatorFile" id="SysFileResult">
+        <id     property="fileId"      column="file_id"      />
+        <result property="fileName"    column="file_name"    />
+        <result property="filePath"    column="file_path"    />
+        <result property="fileUrl"     column="file_url"     />
+        <result property="fileType"    column="file_type"    />
+        <result property="fileSuffix"  column="file_suffix"  />
+        <result property="fileSize"    column="file_size"    />
+        <result property="bizType"     column="biz_type"     />
+        <result property="bizId"       column="biz_id"       />
+        <result property="uploadBy"    column="upload_by"    />
+        <result property="uploadTime"  column="upload_time"  />
+        <result property="delFlag"     column="del_flag"     />
+    </resultMap>
+
+    <sql id="selectSysFileVo">
+        select file_id, file_name, file_path, file_url, file_type, file_suffix, file_size,
+               biz_type, biz_id, upload_by, upload_time, del_flag
+        from sys_file
+    </sql>
+
+    <select id="selectSysFileById" parameterType="Long" resultMap="SysFileResult">
+        <include refid="selectSysFileVo"/>
+        where file_id = #{fileId} and del_flag = '0'
+    </select>
+
+    <select id="selectSysFileList" parameterType="com.ruoyi.elevator.domain.ElevatorFile" resultMap="SysFileResult">
+        <include refid="selectSysFileVo"/>
+        <where>
+            del_flag = '0'
+            <if test="fileName != null and fileName != ''">
+                and file_name like concat('%', #{fileName}, '%')
+            </if>
+            <if test="fileType != null and fileType != ''">
+                and file_type = #{fileType}
+            </if>
+            <if test="bizType != null and bizType != ''">
+                and biz_type = #{bizType}
+            </if>
+            <if test="bizId != null">
+                and biz_id = #{bizId}
+            </if>
+        </where>
+        order by file_id desc
+    </select>
+
+    <select id="selectByBiz" resultMap="SysFileResult">
+        <include refid="selectSysFileVo"/>
+        where del_flag = '0' and biz_type = #{bizType} and biz_id = #{bizId}
+        order by file_id
+    </select>
+
+    <insert id="insertSysFile" parameterType="com.ruoyi.elevator.domain.ElevatorFile" useGeneratedKeys="true" keyProperty="fileId">
+        insert into sys_file (
+            file_name, file_path, file_url, file_type, file_suffix, file_size,
+            biz_type, biz_id, upload_by, upload_time, del_flag
+        ) values (
+            #{fileName}, #{filePath}, #{fileUrl}, #{fileType}, #{fileSuffix}, #{fileSize},
+            #{bizType}, #{bizId}, #{uploadBy}, sysdate(), '0'
+        )
+    </insert>
+
+    <update id="bindBiz">
+        update sys_file set biz_type = #{bizType}, biz_id = #{bizId}
+        where del_flag = '0' and file_id in
+        <foreach item="fileId" collection="fileIds" open="(" separator="," close=")">
+            #{fileId}
+        </foreach>
+    </update>
+
+    <update id="deleteSysFileById" parameterType="Long">
+        update sys_file set del_flag = '2' where file_id = #{fileId}
+    </update>
+
+</mapper>

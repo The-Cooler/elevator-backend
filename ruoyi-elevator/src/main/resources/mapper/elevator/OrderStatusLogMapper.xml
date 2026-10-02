@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.elevator.mapper.OrderStatusLogMapper">
+
+    <resultMap type="com.ruoyi.elevator.domain.OrderStatusLog" id="OrderStatusLogResult">
+        <id     property="logId"        column="log_id"        />
+        <result property="orderId"      column="order_id"      />
+        <result property="fromStatus"   column="from_status"   />
+        <result property="toStatus"     column="to_status"     />
+        <result property="operateType"  column="operate_type"  />
+        <result property="operatorId"   column="operator_id"   />
+        <result property="operatorName" column="operator_name" />
+        <result property="operatorRole" column="operator_role" />
+        <result property="operateTime"  column="operate_time"  />
+        <result property="remark"       column="remark"        />
+    </resultMap>
+
+    <select id="selectByOrderId" parameterType="Long" resultMap="OrderStatusLogResult">
+        select log_id, order_id, from_status, to_status, operate_type,
+               operator_id, operator_name, operator_role, operate_time, remark
+        from order_status_log
+        where order_id = #{orderId}
+        order by operate_time asc, log_id asc
+    </select>
+
+    <insert id="insertOrderStatusLog" parameterType="com.ruoyi.elevator.domain.OrderStatusLog" useGeneratedKeys="true" keyProperty="logId">
+        insert into order_status_log (
+            order_id, from_status, to_status, operate_type,
+            operator_id, operator_name, operator_role, operate_time, remark
+        ) values (
+            #{orderId}, #{fromStatus}, #{toStatus}, #{operateType},
+            #{operatorId}, #{operatorName}, #{operatorRole}, sysdate(), #{remark}
+        )
+    </insert>
+
+</mapper>

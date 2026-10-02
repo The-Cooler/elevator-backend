@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.elevator.mapper.WorkerSkillMapper">
+
+    <resultMap type="com.ruoyi.elevator.domain.WorkerSkill" id="WorkerSkillResult">
+        <id     property="skillId"       column="skill_id"       />
+        <result property="workerId"      column="worker_id"      />
+        <result property="communityId"   column="community_id"   />
+        <result property="skillTags"     column="skill_tags"     />
+        <result property="workStatus"    column="work_status"    />
+        <result property="currentLoad"   column="current_load"   />
+        <result property="totalFinished" column="total_finished" />
+        <result property="avgResponse"   column="avg_response"   />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+        <result property="workerName"    column="worker_name"    />
+        <result property="workerPhone"   column="worker_phone"   />
+        <result property="communityName" column="community_name" />
+    </resultMap>
+
+    <sql id="selectWorkerSkillVo">
+        select ws.skill_id, ws.worker_id, ws.community_id, ws.skill_tags, ws.work_status,
+               ws.current_load, ws.total_finished, ws.avg_response,
+               ws.create_by, ws.create_time, ws.update_by, ws.update_time,
+               u.nick_name as worker_name,
+               u.phonenumber as worker_phone,
+               c.community_name as community_name
+        from worker_skill ws
+        left join sys_user u on ws.worker_id = u.user_id
+        left join community c on ws.community_id = c.community_id
+    </sql>
+
+    <select id="selectWorkerSkillList" parameterType="com.ruoyi.elevator.domain.WorkerSkill" resultMap="WorkerSkillResult">
+        <include refid="selectWorkerSkillVo"/>
+        <where>
+            <if test="workerId != null">and ws.worker_id = #{workerId}</if>
+            <if test="communityId != null">and ws.community_id = #{communityId}</if>
+            <if test="workStatus != null and workStatus != ''">and ws.work_status = #{workStatus}</if>
+            <if test="workerName != null and workerName != ''">and u.nick_name like concat('%', #{workerName}, '%')</if>
+        </where>
+        order by ws.skill_id
+    </select>
+
+    <select id="selectByWorkerId" parameterType="Long" resultMap="WorkerSkillResult">
+        <include refid="selectWorkerSkillVo"/>
+        where ws.worker_id = #{workerId}
+        limit 1
+    </select>
+
+    <select id="selectCandidates" resultMap="WorkerSkillResult">
+        select ws.skill_id, ws.worker_id, ws.community_id, ws.skill_tags, ws.work_status,
+               ws.current_load, ws.total_finished, ws.avg_response,
+               ws.create_by, ws.create_time, ws.update_by, ws.update_time,
+               u.nick_name as worker_name,
+               u.phonenumber as worker_phone,
+               c.community_name as community_name,
+               (select count(1) from worker_skill ws2 where ws2.worker_id = ws.worker_id) as skill_id2
+        from worker_skill ws
+        inner join sys_user u on ws.worker_id = u.user_id
+        inner join sys_user_role ur on u.user_id = ur.user_id
+        inner join sys_role r on ur.role_id = r.role_id
+        left join community c on ws.community_id = c.community_id
+        where u.status = '0' and u.del_flag = '0'
+          and r.role_key = 'worker' and r.status = '0' and r.del_flag = '0'
+          and ws.work_status = '0'
+        <if test="communityId != null">
+            and ws.community_id = #{communityId}
+        </if>
+        group by ws.skill_id, ws.worker_id, ws.community_id, ws.skill_tags, ws.work_status,
+                 ws.current_load, ws.total_finished, ws.avg_response,
+                 ws.create_by, ws.create_time, ws.update_by, ws.update_time,
+                 u.nick_name, u.phonenumber, c.community_name
+        order by ws.current_load asc, ws.avg_response asc
+    </select>
+
+    <insert id="insertWorkerSkill" parameterType="com.ruoyi.elevator.domain.WorkerSkill" useGeneratedKeys="true" keyProperty="skillId">
+        insert into worker_skill (
+            worker_id, community_id, skill_tags, work_status, current_load, total_finished,
+            avg_response, create_by, create_time
+        ) values (
+            #{workerId}, #{communityId}, #{skillTags}, ifnull(#{workStatus}, '0'),
+            ifnull(#{currentLoad}, 0), ifnull(#{totalFinished}, 0),
+            ifnull(#{avgResponse}, 0), #{createBy}, sysdate()
+        )
+    </insert>
+
+    <update id="updateWorkerSkill" parameterType="com.ruoyi.elevator.domain.WorkerSkill">
+        update worker_skill
+        <set>
+            <if test="communityId != null">community_id = #{communityId},</if>
+            <if test="skillTags != null">skill_tags = #{skillTags},</if>
+            <if test="workStatus != null and workStatus != ''">work_status = #{workStatus},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where skill_id = #{skillId}
+    </update>
+
+    <update id="deleteWorkerSkillByIds">
+        delete from worker_skill where skill_id in
+        <foreach item="skillId" collection="array" open="(" separator="," close=")">
+            #{skillId}
+        </foreach>
+    </update>
+
+    <update id="updateCurrentLoad" parameterType="Long">
+        update worker_skill
+        set current_load = (
+            select count(1) from repair_order o
+            where o.del_flag = '0' and o.assignee_id = #{workerId}
+              and o.order_status in ('assigned','accepted','arrived','repairing','repaired','appealed')
+        )
+        where worker_id = #{workerId}
+    </update>
+
+    <update id="increaseFinished">
+        update worker_skill
+        set total_finished = total_finished + 1,
+            avg_response = case
+                when avg_response is null or avg_response = 0 then ifnull(#{responseMinutes}, 0)
+                else round((avg_response * total_finished + ifnull(#{responseMinutes}, 0)) / (total_finished + 1))
+            end
+        where worker_id = #{workerId}
+    </update>
+
+</mapper>

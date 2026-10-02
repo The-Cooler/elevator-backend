@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.elevator.mapper.RepairRecordMapper">
+
+    <resultMap type="com.ruoyi.elevator.domain.RepairRecord" id="RepairRecordResult">
+        <id     property="recordId"        column="record_id"        />
+        <result property="orderId"         column="order_id"         />
+        <result property="workerId"        column="worker_id"        />
+        <result property="arriveTime"      column="arrive_time"      />
+        <result property="arriveLocation"  column="arrive_location"  />
+        <result property="investigateNote" column="investigate_note" />
+        <result property="repairDesc"      column="repair_desc"      />
+        <result property="faultReason"     column="fault_reason"     />
+        <result property="replaceParts"    column="replace_parts"    />
+        <result property="finishTime"      column="finish_time"      />
+        <result property="resultFileId"    column="result_file_id"   />
+        <result property="createBy"        column="create_by"        />
+        <result property="createTime"      column="create_time"      />
+        <result property="updateBy"        column="update_by"        />
+        <result property="updateTime"      column="update_time"      />
+        <result property="workerName"      column="worker_name"      />
+        <result property="resultFileName"  column="result_file_name" />
+    </resultMap>
+
+    <sql id="selectRepairRecordVo">
+        select r.record_id, r.order_id, r.worker_id, r.arrive_time, r.arrive_location,
+               r.investigate_note, r.repair_desc, r.fault_reason, r.replace_parts,
+               r.finish_time, r.result_file_id, r.create_by, r.create_time, r.update_by, r.update_time,
+               u.nick_name as worker_name,
+               f.file_name as result_file_name
+        from repair_record r
+        left join sys_user u on r.worker_id = u.user_id
+        left join sys_file f on r.result_file_id = f.file_id and f.del_flag = '0'
+    </sql>
+
+    <select id="selectByOrderId" parameterType="Long" resultMap="RepairRecordResult">
+        <include refid="selectRepairRecordVo"/>
+        where r.order_id = #{orderId}
+        order by r.record_id desc
+        limit 1
+    </select>
+
+    <select id="selectRepairRecordList" parameterType="com.ruoyi.elevator.domain.RepairRecord" resultMap="RepairRecordResult">
+        <include refid="selectRepairRecordVo"/>
+        <where>
+            <if test="orderId != null">and r.order_id = #{orderId}</if>
+            <if test="workerId != null">and r.worker_id = #{workerId}</if>
+        </where>
+        order by r.record_id desc
+    </select>
+
+    <insert id="insertRepairRecord" parameterType="com.ruoyi.elevator.domain.RepairRecord" useGeneratedKeys="true" keyProperty="recordId">
+        insert into repair_record (
+            order_id, worker_id, arrive_time, arrive_location, investigate_note,
+            repair_desc, fault_reason, replace_parts, finish_time, result_file_id,
+            create_by, create_time
+        ) values (
+            #{orderId}, #{workerId}, #{arriveTime}, #{arriveLocation}, #{investigateNote},
+            #{repairDesc}, #{faultReason}, #{replaceParts}, #{finishTime}, #{resultFileId},
+            #{createBy}, sysdate()
+        )
+    </insert>
+
+    <update id="updateRepairRecord" parameterType="com.ruoyi.elevator.domain.RepairRecord">
+        update repair_record
+        <set>
+            <if test="arriveTime != null">arrive_time = #{arriveTime},</if>
+            <if test="arriveLocation != null">arrive_location = #{arriveLocation},</if>
+            <if test="investigateNote != null">investigate_note = #{investigateNote},</if>
+            <if test="repairDesc != null">repair_desc = #{repairDesc},</if>
+            <if test="faultReason != null">fault_reason = #{faultReason},</if>
+            <if test="replaceParts != null">replace_parts = #{replaceParts},</if>
+            <if test="finishTime != null">finish_time = #{finishTime},</if>
+            <if test="resultFileId != null">result_file_id = #{resultFileId},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where record_id = #{recordId}
+    </update>
+
+</mapper>

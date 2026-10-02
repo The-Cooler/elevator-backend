@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.elevator.mapper.ElevatorHealthMapper">
+
+    <resultMap type="com.ruoyi.elevator.domain.ElevatorHealth" id="ElevatorHealthResult">
+        <id     property="healthId"       column="health_id"       />
+        <result property="elevatorId"     column="elevator_id"     />
+        <result property="statPeriod"     column="stat_period"     />
+        <result property="statStartDate"  column="stat_start_date" />
+        <result property="statEndDate"    column="stat_end_date"   />
+        <result property="faultCount"     column="fault_count"     />
+        <result property="faultRate"      column="fault_rate"      />
+        <result property="faultScore"     column="fault_score"     />
+        <result property="maintainDone"   column="maintain_done"   />
+        <result property="maintainFinish" column="maintain_finish" />
+        <result property="maintainRate"   column="maintain_rate"   />
+        <result property="maintainScore"  column="maintain_score"  />
+        <result property="inspectTotal"   column="inspect_total"   />
+        <result property="inspectNormal"  column="inspect_normal"  />
+        <result property="inspectRate"    column="inspect_rate"    />
+        <result property="inspectScore"   column="inspect_score"   />
+        <result property="maintainApplicable" column="maintain_applicable" />
+        <result property="inspectApplicable"  column="inspect_applicable"  />
+        <result property="healthScore"    column="health_score"    />
+        <result property="healthLevel"    column="health_level"    />
+        <result property="calcTime"       column="calc_time"       />
+        <result property="elevatorCode"   column="elevator_code"   />
+        <result property="brand"          column="brand"           />
+        <result property="communityName"  column="community_name"  />
+        <result property="buildingNo"     column="building_no"     />
+        <result property="unitNo"         column="unit_no"         />
+        <result property="communityId"    column="community_id"    />
+    </resultMap>
+
+    <sql id="selectElevatorHealthVo">
+        select h.health_id, h.elevator_id, h.stat_period, h.stat_start_date, h.stat_end_date,
+               h.fault_count, h.fault_rate, h.fault_score, h.maintain_done, h.maintain_finish,
+               h.maintain_rate, h.maintain_score, h.inspect_total, h.inspect_normal,
+               h.inspect_rate, h.inspect_score, h.maintain_applicable, h.inspect_applicable,
+               h.health_score, h.health_level, h.calc_time,
+               e.elevator_code as elevator_code,
+               e.brand as brand,
+               e.unit_no as unit_no,
+               b.building_no as building_no,
+               b.community_id as community_id,
+               c.community_name as community_name
+        from elevator_health h
+        left join elevator e on h.elevator_id = e.elevator_id
+        left join building b on e.building_id = b.building_id
+        left join community c on b.community_id = c.community_id
+    </sql>
+
+    <select id="selectElevatorHealthList" parameterType="com.ruoyi.elevator.domain.ElevatorHealth" resultMap="ElevatorHealthResult">
+        <include refid="selectElevatorHealthVo"/>
+        <where>
+            <if test="elevatorId != null">and h.elevator_id = #{elevatorId}</if>
+            <if test="statPeriod != null and statPeriod != ''">and h.stat_period = #{statPeriod}</if>
+            <if test="healthLevel != null and healthLevel != ''">and h.health_level = #{healthLevel}</if>
+            <if test="queryCommunityId != null">and b.community_id = #{queryCommunityId}</if>
+            <if test="communityId != null">and b.community_id = #{communityId}</if>
+            <if test="elevatorCode != null and elevatorCode != ''">and e.elevator_code like concat('%', #{elevatorCode}, '%')</if>
+        </where>
+        order by h.health_score asc, h.elevator_id
+    </select>
+
+    <select id="selectByElevatorAndPeriod" resultMap="ElevatorHealthResult">
+        <include refid="selectElevatorHealthVo"/>
+        where h.elevator_id = #{elevatorId} and h.stat_period = #{statPeriod}
+        order by h.health_id desc
+        limit 1
+    </select>
+
+    <select id="selectTrend" resultMap="ElevatorHealthResult">
+        <include refid="selectElevatorHealthVo"/>
+        where h.elevator_id = #{elevatorId}
+        order by h.stat_period desc, h.health_id desc
+        limit #{limit}
+    </select>
+
+    <select id="selectAllElevatorIds" resultType="java.lang.Long">
+        select elevator_id from elevator where del_flag = '0' order by elevator_id
+    </select>
+
+    <insert id="insertElevatorHealth" parameterType="com.ruoyi.elevator.domain.ElevatorHealth" useGeneratedKeys="true" keyProperty="healthId">
+        insert into elevator_health (
+            elevator_id, stat_period, stat_start_date, stat_end_date, fault_count,
+            fault_rate, fault_score, maintain_done, maintain_finish, maintain_rate, maintain_score,
+            inspect_total, inspect_normal, inspect_rate, inspect_score,
+            maintain_applicable, inspect_applicable,
+            health_score, health_level, calc_time
+        ) values (
+            #{elevatorId}, #{statPeriod}, #{statStartDate}, #{statEndDate}, #{faultCount},
+            #{faultRate}, #{faultScore}, #{maintainDone}, #{maintainFinish}, #{maintainRate}, #{maintainScore},
+            #{inspectTotal}, #{inspectNormal}, #{inspectRate}, #{inspectScore},
+            #{maintainApplicable}, #{inspectApplicable},
+            #{healthScore}, #{healthLevel}, sysdate()
+        )
+    </insert>
+
+    <update id="updateElevatorHealth" parameterType="com.ruoyi.elevator.domain.ElevatorHealth">
+        update elevator_health
+        <set>
+            <if test="faultCount != null">fault_count = #{faultCount},</if>
+            <if test="faultRate != null">fault_rate = #{faultRate},</if>
+            <if test="faultScore != null">fault_score = #{faultScore},</if>
+            <if test="maintainDone != null">maintain_done = #{maintainDone},</if>
+            <if test="maintainFinish != null">maintain_finish = #{maintainFinish},</if>
+            <if test="maintainRate != null">maintain_rate = #{maintainRate},</if>
+            <if test="maintainScore != null">maintain_score = #{maintainScore},</if>
+            <if test="inspectTotal != null">inspect_total = #{inspectTotal},</if>
+            <if test="inspectNormal != null">inspect_normal = #{inspectNormal},</if>
+            <if test="inspectRate != null">inspect_rate = #{inspectRate},</if>
+            <if test="inspectScore != null">inspect_score = #{inspectScore},</if>
+            <if test="maintainApplicable != null">maintain_applicable = #{maintainApplicable},</if>
+            <if test="inspectApplicable != null">inspect_applicable = #{inspectApplicable},</if>
+            <if test="healthScore != null">health_score = #{healthScore},</if>
+            <if test="healthLevel != null and healthLevel != ''">health_level = #{healthLevel},</if>
+            calc_time = sysdate()
+        </set>
+        where health_id = #{healthId}
+    </update>
+
+    <delete id="deleteByElevatorAndPeriod">
+        delete from elevator_health where elevator_id = #{elevatorId} and stat_period = #{statPeriod}
+    </delete>
+
+</mapper>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.elevator.mapper.RepairEvidenceMapper">
+
+    <resultMap type="com.ruoyi.elevator.domain.RepairEvidence" id="RepairEvidenceResult">
+        <id     property="evidenceId"   column="evidence_id"   />
+        <result property="orderId"      column="order_id"      />
+        <result property="fileId"       column="file_id"       />
+        <result property="evidenceType" column="evidence_type" />
+        <result property="uploadTime"   column="upload_time"   />
+        <result property="createBy"     column="create_by"     />
+        <result property="delFlag"      column="del_flag"      />
+        <result property="fileName"     column="file_name"     />
+        <result property="fileSuffix"   column="file_suffix"   />
+        <result property="fileSize"     column="file_size"     />
+        <result property="orderNo"      column="order_no"      />
+        <result property="elevatorCode" column="elevator_code" />
+    </resultMap>
+
+    <sql id="selectEvidenceVo">
+        select ev.evidence_id, ev.order_id, ev.file_id, ev.evidence_type, ev.upload_time,
+               ev.create_by, ev.del_flag,
+               f.file_name as file_name,
+               f.file_suffix as file_suffix,
+               f.file_size as file_size,
+               o.order_no as order_no,
+               e.elevator_code as elevator_code
+        from repair_evidence ev
+        left join sys_file f on ev.file_id = f.file_id
+        left join repair_order o on ev.order_id = o.order_id
+        left join elevator e on o.elevator_id = e.elevator_id
+    </sql>
+
+    <select id="selectRepairEvidenceList" parameterType="com.ruoyi.elevator.domain.RepairEvidence" resultMap="RepairEvidenceResult">
+        <include refid="selectEvidenceVo"/>
+        <where>
+            ev.del_flag = '0'
+            <if test="orderId != null">
+                and ev.order_id = #{orderId}
+            </if>
+            <if test="evidenceType != null and evidenceType != ''">
+                and ev.evidence_type = #{evidenceType}
+            </if>
+            <if test="orderNo != null and orderNo != ''">
+                and o.order_no like concat('%', #{orderNo}, '%')
+            </if>
+            <if test="elevatorCode != null and elevatorCode != ''">
+                and e.elevator_code like concat('%', #{elevatorCode}, '%')
+            </if>
+            <if test="beginTime != null and beginTime != ''">
+                and ev.upload_time &gt;= #{beginTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                and ev.upload_time &lt;= #{endTime}
+            </if>
+        </where>
+        order by ev.evidence_id desc
+    </select>
+
+    <select id="selectByOrderId" parameterType="Long" resultMap="RepairEvidenceResult">
+        <include refid="selectEvidenceVo"/>
+        where ev.del_flag = '0' and ev.order_id = #{orderId}
+        order by ev.evidence_id
+    </select>
+
+    <select id="countByOrderIdAndType" resultType="int">
+        select count(1) from repair_evidence
+        where del_flag = '0' and order_id = #{orderId} and evidence_type = #{evidenceType}
+    </select>
+
+    <insert id="insertRepairEvidence" parameterType="com.ruoyi.elevator.domain.RepairEvidence" useGeneratedKeys="true" keyProperty="evidenceId">
+        insert into repair_evidence (order_id, file_id, evidence_type, upload_time, create_by, del_flag)
+        values (#{orderId}, #{fileId}, #{evidenceType}, sysdate(), #{createBy}, '0')
+    </insert>
+
+    <update id="deleteRepairEvidenceById" parameterType="Long">
+        update repair_evidence set del_flag = '2' where evidence_id = #{evidenceId}
+    </update>
+
+</mapper>

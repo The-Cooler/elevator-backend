@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.elevator.mapper.UserQueryMapper">
+
+    <select id="selectUserIdsByRoleKey" resultType="java.lang.Long">
+        select u.user_id
+        from sys_user u
+        inner join sys_user_role ur on u.user_id = ur.user_id
+        inner join sys_role r on ur.role_id = r.role_id
+        where u.status = '0' and u.del_flag = '0' and r.status = '0' and r.del_flag = '0'
+          and r.role_key = #{roleKey}
+        order by u.user_id
+    </select>
+
+    <select id="selectWorkerIdsByCommunity" resultType="java.lang.Long">
+        select distinct u.user_id
+        from sys_user u
+        inner join sys_user_role ur on u.user_id = ur.user_id
+        inner join sys_role r on ur.role_id = r.role_id
+        left join worker_skill ws on ws.worker_id = u.user_id
+        where u.status = '0' and u.del_flag = '0' and r.status = '0' and r.del_flag = '0'
+          and r.role_key = 'worker'
+        <if test="communityId != null">
+            and ws.community_id = #{communityId}
+        </if>
+        order by u.user_id
+    </select>
+
+    <select id="selectNickNameById" resultType="java.lang.String">
+        select nick_name from sys_user where user_id = #{userId}
+    </select>
+
+    <select id="selectRoleKeysByUserId" resultType="java.lang.String">
+        select r.role_key
+        from sys_role r
+        inner join sys_user_role ur on ur.role_id = r.role_id
+        where ur.user_id = #{userId}
+          and r.status = '0' and r.del_flag = '0'
+        order by r.role_sort
+    </select>
+
+    <select id="selectUserIdByPhone" resultType="java.lang.Long">
+        select user_id from sys_user
+        where del_flag = '0' and phonenumber = #{phonenumber}
+        limit 1
+    </select>
+
+    <select id="selectRoleIdByRoleKey" resultType="java.lang.Long">
+        select role_id from sys_role
+        where del_flag = '0' and status = '0' and role_key = #{roleKey}
+        limit 1
+    </select>
+
+</mapper>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.elevator.mapper.ElevatorNoticeMapper">
+
+    <resultMap type="com.ruoyi.elevator.domain.ElevatorNotice" id="ElevatorNoticeResult">
+        <id     property="noticeId"    column="notice_id"    />
+        <result property="noticeType"  column="notice_type"  />
+        <result property="title"       column="title"        />
+        <result property="content"     column="content"      />
+        <result property="bizId"       column="biz_id"       />
+        <result property="receiverId"  column="receiver_id"  />
+        <result property="isRead"      column="is_read"      />
+        <result property="readTime"    column="read_time"    />
+        <result property="createTime"  column="create_time"  />
+    </resultMap>
+
+    <select id="selectElevatorNoticeList" parameterType="com.ruoyi.elevator.domain.ElevatorNotice" resultMap="ElevatorNoticeResult">
+        select notice_id, notice_type, title, content, biz_id, receiver_id, is_read, read_time, create_time
+        from elevator_notice
+        <where>
+            <if test="receiverId != null">and receiver_id = #{receiverId}</if>
+            <if test="isRead != null and isRead != ''">and is_read = #{isRead}</if>
+            <if test="noticeType != null and noticeType != ''">and notice_type = #{noticeType}</if>
+        </where>
+        order by notice_id desc
+    </select>
+
+    <select id="countUnread" parameterType="Long" resultType="int">
+        select count(1) from elevator_notice where receiver_id = #{receiverId} and is_read = '0'
+    </select>
+
+    <insert id="insertElevatorNotice" parameterType="com.ruoyi.elevator.domain.ElevatorNotice" useGeneratedKeys="true" keyProperty="noticeId">
+        insert into elevator_notice (notice_type, title, content, biz_id, receiver_id, is_read, create_time)
+        values (#{noticeType}, #{title}, #{content}, #{bizId}, #{receiverId}, '0', sysdate())
+    </insert>
+
+    <update id="updateRead">
+        update elevator_notice set is_read = '1', read_time = sysdate()
+        where receiver_id = #{receiverId} and notice_id in
+        <foreach item="noticeId" collection="noticeIds" open="(" separator="," close=")">
+            #{noticeId}
+        </foreach>
+    </update>
+
+    <update id="updateAllRead" parameterType="Long">
+        update elevator_notice set is_read = '1', read_time = sysdate()
+        where receiver_id = #{receiverId} and is_read = '0'
+    </update>
+
+</mapper>

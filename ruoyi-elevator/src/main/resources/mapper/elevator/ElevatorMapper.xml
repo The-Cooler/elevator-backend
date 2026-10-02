@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.elevator.mapper.ElevatorMapper">
+
+    <resultMap type="com.ruoyi.elevator.domain.Elevator" id="ElevatorResult">
+        <id     property="elevatorId"    column="elevator_id"    />
+        <result property="elevatorCode"  column="elevator_code"  />
+        <result property="brand"         column="brand"          />
+        <result property="model"         column="model"          />
+        <result property="buildingId"    column="building_id"    />
+        <result property="unitNo"        column="unit_no"        />
+        <result property="maintainUnit"  column="maintain_unit"  />
+        <result property="installDate"   column="install_date"   />
+        <result property="serviceYears"  column="service_years"  />
+        <result property="certFileId"    column="cert_file_id"   />
+        <result property="status"        column="status"         />
+        <result property="delFlag"       column="del_flag"       />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"        column="remark"         />
+        <result property="communityId"   column="community_id"   />
+        <result property="communityName" column="community_name" />
+        <result property="buildingNo"    column="building_no"    />
+        <result property="certFileName"  column="cert_file_name" />
+    </resultMap>
+
+    <sql id="selectElevatorVo">
+        select e.elevator_id, e.elevator_code, e.brand, e.model, e.building_id, e.unit_no,
+               e.maintain_unit, e.install_date, e.service_years, e.cert_file_id, e.status,
+               e.del_flag, e.create_by, e.create_time, e.update_by, e.update_time, e.remark,
+               b.community_id as community_id,
+               c.community_name as community_name,
+               b.building_no as building_no,
+               f.file_name as cert_file_name
+        from elevator e
+        left join building b on e.building_id = b.building_id
+        left join community c on b.community_id = c.community_id
+        left join sys_file f on e.cert_file_id = f.file_id and f.del_flag = '0'
+    </sql>
+
+    <select id="selectElevatorList" parameterType="com.ruoyi.elevator.domain.Elevator" resultMap="ElevatorResult">
+        <include refid="selectElevatorVo"/>
+        <where>
+            e.del_flag = '0'
+            <if test="elevatorCode != null and elevatorCode != ''">
+                and e.elevator_code like concat('%', #{elevatorCode}, '%')
+            </if>
+            <if test="brand != null and brand != ''">
+                and e.brand like concat('%', #{brand}, '%')
+            </if>
+            <if test="buildingId != null">
+                and e.building_id = #{buildingId}
+            </if>
+            <if test="communityId != null">
+                and b.community_id = #{communityId}
+            </if>
+            <if test="unitNo != null and unitNo != ''">
+                and e.unit_no = #{unitNo}
+            </if>
+            <if test="status != null and status != ''">
+                and e.status = #{status}
+            </if>
+            <if test="maintainUnit != null and maintainUnit != ''">
+                and e.maintain_unit like concat('%', #{maintainUnit}, '%')
+            </if>
+        </where>
+        order by e.elevator_id
+    </select>
+
+    <select id="selectElevatorById" parameterType="Long" resultMap="ElevatorResult">
+        <include refid="selectElevatorVo"/>
+        where e.elevator_id = #{elevatorId} and e.del_flag = '0'
+    </select>
+
+    <select id="selectElevatorCount" resultType="int">
+        select count(1) from elevator where del_flag = '0'
+    </select>
+
+    <select id="countByCommunity" resultType="java.util.LinkedHashMap">
+        select c.community_id   as communityId,
+               c.community_name as communityName,
+               count(e.elevator_id) as elevatorCount
+        from community c
+        left join building b on b.community_id = c.community_id and b.del_flag = '0'
+        left join elevator e on e.building_id = b.building_id and e.del_flag = '0'
+        where c.del_flag = '0'
+        group by c.community_id, c.community_name
+        order by c.community_id
+    </select>
+
+    <select id="countByBuilding" resultType="java.util.LinkedHashMap">
+        select b.building_id  as buildingId,
+               concat(c.community_name, ' ', b.building_no, ' ', b.unit_no) as buildingName,
+               count(e.elevator_id) as elevatorCount
+        from building b
+        left join community c on b.community_id = c.community_id
+        left join elevator e on e.building_id = b.building_id and e.del_flag = '0'
+        where b.del_flag = '0'
+        <if test="_parameter != null">
+            and b.community_id = #{communityId}
+        </if>
+        group by b.building_id, c.community_name, b.building_no, b.unit_no
+        order by b.building_id
+    </select>
+
+    <select id="checkElevatorCodeUnique" resultType="int">
+        select count(1) from elevator
+        where del_flag = '0' and elevator_code = #{elevatorCode}
+        <if test="elevatorId != null">
+            and elevator_id != #{elevatorId}
+        </if>
+    </select>
+
+    <insert id="insertElevator" parameterType="com.ruoyi.elevator.domain.Elevator" useGeneratedKeys="true" keyProperty="elevatorId">
+        insert into elevator (
+            elevator_code, brand, model, building_id, unit_no, maintain_unit,
+            install_date, service_years, cert_file_id, status, del_flag, create_by, create_time, remark
+        ) values (
+            #{elevatorCode}, #{brand}, #{model}, #{buildingId}, #{unitNo}, #{maintainUnit},
+            #{installDate}, #{serviceYears}, #{certFileId}, #{status}, '0', #{createBy}, sysdate(), #{remark}
+        )
+    </insert>
+
+    <update id="updateElevator" parameterType="com.ruoyi.elevator.domain.Elevator">
+        update elevator
+        <set>
+            <if test="elevatorCode != null and elevatorCode != ''">elevator_code = #{elevatorCode},</if>
+            <if test="brand != null">brand = #{brand},</if>
+            <if test="model != null">model = #{model},</if>
+            <if test="buildingId != null">building_id = #{buildingId},</if>
+            <if test="unitNo != null">unit_no = #{unitNo},</if>
+            <if test="maintainUnit != null">maintain_unit = #{maintainUnit},</if>
+            <if test="installDate != null">install_date = #{installDate},</if>
+            <if test="serviceYears != null">service_years = #{serviceYears},</if>
+            <if test="certFileId != null">cert_file_id = #{certFileId},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = sysdate()
+        </set>
+        where elevator_id = #{elevatorId}
+    </update>
+
+    <update id="updateElevatorStatus">
+        update elevator set status = #{status}, update_time = sysdate() where elevator_id = #{elevatorId}
+    </update>
+
+    <update id="deleteElevatorByIds">
+        update elevator set del_flag = '2' where elevator_id in
+        <foreach item="elevatorId" collection="array" open="(" separator="," close=")">
+            #{elevatorId}
+        </foreach>
+    </update>
+
+    <select id="selectElevatorWithLocation" parameterType="com.ruoyi.elevator.domain.Elevator" resultMap="ElevatorResult">
+        <include refid="selectElevatorVo"/>
+        <where>
+            e.del_flag = '0'
+            <if test="elevatorCode != null and elevatorCode != ''">
+                and e.elevator_code like concat('%', #{elevatorCode}, '%')
+            </if>
+            <if test="buildingId != null">
+                and e.building_id = #{buildingId}
+            </if>
+            <if test="communityId != null">
+                and b.community_id = #{communityId}
+            </if>
+        </where>
+        order by b.community_id, e.building_id, e.elevator_id
+    </select>
+
+</mapper>

@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.elevator.mapper.RepairOrderMapper">
+
+    <resultMap type="com.ruoyi.elevator.domain.RepairOrder" id="RepairOrderResult">
+        <id     property="orderId"        column="order_id"        />
+        <result property="orderNo"        column="order_no"        />
+        <result property="userId"         column="user_id"         />
+        <result property="elevatorId"     column="elevator_id"     />
+        <result property="faultDesc"      column="fault_desc"      />
+        <result property="faultType"      column="fault_type"      />
+        <result property="faultLevel"     column="fault_level"     />
+        <result property="orderStatus"    column="order_status"    />
+        <result property="reporterPhone"  column="reporter_phone"  />
+        <result property="reportTime"     column="report_time"     />
+        <result property="assignTime"     column="assign_time"     />
+        <result property="acceptTime"     column="accept_time"     />
+        <result property="arriveTime"     column="arrive_time"     />
+        <result property="finishTime"     column="finish_time"     />
+        <result property="confirmTime"    column="confirm_time"    />
+        <result property="assigneeId"     column="assignee_id"     />
+        <result property="assignerId"     column="assigner_id"     />
+        <result property="rejectReason"   column="reject_reason"   />
+        <result property="deadlineTime"   column="deadline_time"   />
+        <result property="delFlag"        column="del_flag"        />
+        <result property="createBy"       column="create_by"       />
+        <result property="createTime"     column="create_time"     />
+        <result property="updateBy"       column="update_by"       />
+        <result property="updateTime"     column="update_time"     />
+        <result property="remark"         column="remark"          />
+        <result property="reporterName"   column="reporter_name"   />
+        <result property="reporterPhoneNo" column="reporter_phone_no" />
+        <result property="elevatorCode"   column="elevator_code"   />
+        <result property="elevatorBrand"  column="elevator_brand"  />
+        <result property="communityId"    column="community_id"    />
+        <result property="communityName"  column="community_name"  />
+        <result property="buildingNo"     column="building_no"     />
+        <result property="unitNo"         column="unit_no"         />
+        <result property="assigneeName"   column="assignee_name"   />
+        <result property="assigneePhone"  column="assignee_phone"  />
+        <result property="assignerName"   column="assigner_name"   />
+    </resultMap>
+
+    <sql id="selectRepairOrderVo">
+        select o.order_id, o.order_no, o.user_id, o.elevator_id, o.fault_desc, o.fault_type,
+               o.fault_level, o.order_status, o.reporter_phone, o.report_time, o.assign_time,
+               o.accept_time, o.arrive_time, o.finish_time, o.confirm_time, o.assignee_id,
+               o.assigner_id, o.reject_reason, o.deadline_time, o.del_flag, o.create_by,
+               o.create_time, o.update_by, o.update_time, o.remark,
+               u.nick_name as reporter_name,
+               u.phonenumber as reporter_phone_no,
+               e.elevator_code as elevator_code,
+               e.brand as elevator_brand,
+               e.unit_no as unit_no,
+               b.community_id as community_id,
+               b.building_no as building_no,
+               c.community_name as community_name,
+               w.nick_name as assignee_name,
+               w.phonenumber as assignee_phone,
+               ag.nick_name as assigner_name
+        from repair_order o
+        left join sys_user u on o.user_id = u.user_id
+        left join sys_user w on o.assignee_id = w.user_id
+        left join sys_user ag on o.assigner_id = ag.user_id
+        left join elevator e on o.elevator_id = e.elevator_id
+        left join building b on e.building_id = b.building_id
+        left join community c on b.community_id = c.community_id
+    </sql>
+
+    <select id="selectRepairOrderList" parameterType="com.ruoyi.elevator.domain.RepairOrder" resultMap="RepairOrderResult">
+        <include refid="selectRepairOrderVo"/>
+        <where>
+            o.del_flag = '0'
+            <if test="orderNo != null and orderNo != ''">
+                and o.order_no like concat('%', #{orderNo}, '%')
+            </if>
+            <if test="orderStatus != null and orderStatus != ''">
+                and o.order_status = #{orderStatus}
+            </if>
+            <if test="faultLevel != null and faultLevel != ''">
+                and o.fault_level = #{faultLevel}
+            </if>
+            <if test="faultType != null and faultType != ''">
+                and o.fault_type = #{faultType}
+            </if>
+            <if test="elevatorId != null">
+                and o.elevator_id = #{elevatorId}
+            </if>
+            <if test="communityId != null">
+                and b.community_id = #{communityId}
+            </if>
+            <if test="buildingId != null">
+                and e.building_id = #{buildingId}
+            </if>
+            <if test="assigneeId != null">
+                and o.assignee_id = #{assigneeId}
+            </if>
+            <if test="queryUserId != null">
+                and o.user_id = #{queryUserId}
+            </if>
+            <if test="queryAssigneeId != null">
+                and o.assignee_id = #{queryAssigneeId}
+            </if>
+            <if test="faultDesc != null and faultDesc != ''">
+                and o.fault_desc like concat('%', #{faultDesc}, '%')
+            </if>
+            <if test="beginTime != null and beginTime != ''">
+                and o.report_time &gt;= #{beginTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                and o.report_time &lt;= #{endTime}
+            </if>
+        </where>
+        order by o.fault_level asc, o.report_time desc
+    </select>
+
+    <select id="selectRepairOrderById" parameterType="Long" resultMap="RepairOrderResult">
+        <include refid="selectRepairOrderVo"/>
+        where o.order_id = #{orderId} and o.del_flag = '0'
+    </select>
+
+    <select id="selectRecentOrders" resultMap="RepairOrderResult">
+        <include refid="selectRepairOrderVo"/>
+        where o.del_flag = '0'
+        order by o.report_time desc
+        limit #{limit}
+    </select>
+
+    <select id="countOpenOrderByElevator" parameterType="Long" resultType="int">
+        select count(1) from repair_order
+        where del_flag = '0' and elevator_id = #{elevatorId}
+          and order_status in ('pending','assigned','accepted','arrived','repairing','repaired','appealed')
+    </select>
+
+    <select id="countByStatus" resultType="int">
+        select count(1) from repair_order
+        where del_flag = '0'
+        <if test="orderStatus != null and orderStatus != ''">
+            and order_status = #{orderStatus}
+        </if>
+    </select>
+
+    <select id="countCurrentMonth" resultType="int">
+        select count(1) from repair_order
+        where del_flag = '0'
+          and date_format(report_time, '%Y-%m') = date_format(sysdate(), '%Y-%m')
+    </select>
+
+    <select id="countOverdue" resultType="int">
+        select count(1) from repair_order
+        where del_flag = '0'
+          and order_status not in ('confirmed')
+          and deadline_time is not null
+          and deadline_time &lt; sysdate()
+    </select>
+
+    <select id="selectOverdueOrders" resultMap="RepairOrderResult">
+        <include refid="selectRepairOrderVo"/>
+        where o.del_flag = '0'
+        <choose>
+            <when test="ruleType == 'assign'">
+                and o.order_status = 'pending'
+                and o.report_time &lt; date_sub(sysdate(), interval #{thresholdMinutes} minute)
+            </when>
+            <when test="ruleType == 'accept'">
+                and o.order_status = 'assigned'
+                and o.assign_time &lt; date_sub(sysdate(), interval #{thresholdMinutes} minute)
+            </when>
+            <when test="ruleType == 'arrive'">
+                and o.order_status = 'accepted'
+                and o.accept_time &lt; date_sub(sysdate(), interval #{thresholdMinutes} minute)
+            </when>
+            <when test="ruleType == 'repair'">
+                and o.order_status in ('arrived','repairing')
+                and o.arrive_time &lt; date_sub(sysdate(), interval #{thresholdMinutes} minute)
+            </when>
+            <otherwise>
+                and 1 = 0
+            </otherwise>
+        </choose>
+        order by o.report_time
+    </select>
+
+    <select id="countByElevator" resultType="java.util.LinkedHashMap">
+        select e.elevator_id   as elevatorId,
+               e.elevator_code as elevatorCode,
+               c.community_name as communityName,
+               b.building_no as buildingNo,
+               count(o.order_id) as faultCount
+        from elevator e
+        left join building b on e.building_id = b.building_id
+        left join community c on b.community_id = c.community_id
+        left join repair_order o on o.elevator_id = e.elevator_id and o.del_flag = '0'
+            <if test="beginTime != null and beginTime != ''">and o.report_time &gt;= #{beginTime}</if>
+            <if test="endTime != null and endTime != ''">and o.report_time &lt;= #{endTime}</if>
+        where e.del_flag = '0'
+        <if test="communityId != null">and b.community_id = #{communityId}</if>
+        group by e.elevator_id, e.elevator_code, c.community_name, b.building_no
+        order by faultCount desc, e.elevator_id
+    </select>
+
+    <select id="countByBuilding" resultType="java.util.LinkedHashMap">
+        select b.building_id as buildingId,
+               concat(c.community_name, ' ', b.building_no, ' ', b.unit_no) as buildingName,
+               count(o.order_id) as faultCount
+        from building b
+        left join community c on b.community_id = c.community_id
+        left join elevator e on e.building_id = b.building_id and e.del_flag = '0'
+        left join repair_order o on o.elevator_id = e.elevator_id and o.del_flag = '0'
+            <if test="beginTime != null and beginTime != ''">and o.report_time &gt;= #{beginTime}</if>
+            <if test="endTime != null and endTime != ''">and o.report_time &lt;= #{endTime}</if>
+        where b.del_flag = '0'
+        <if test="communityId != null">and b.community_id = #{communityId}</if>
+        group by b.building_id, c.community_name, b.building_no, b.unit_no
+        order by faultCount desc, b.building_id
+    </select>
+
+    <select id="countByTrend" resultType="java.util.LinkedHashMap">
+        select
+        <choose>
+            <when test="granularity == 'month'">date_format(o.report_time, '%Y-%m')</when>
+            <when test="granularity == 'week'">date_format(o.report_time, '%x-%v')</when>
+            <otherwise>date_format(o.report_time, '%Y-%m-%d')</otherwise>
+        </choose>
+        as timeLabel,
+        count(o.order_id) as faultCount
+        from repair_order o
+        left join elevator e on o.elevator_id = e.elevator_id
+        left join building b on e.building_id = b.building_id
+        where o.del_flag = '0'
+        <if test="communityId != null">and b.community_id = #{communityId}</if>
+        <if test="beginTime != null and beginTime != ''">and o.report_time &gt;= #{beginTime}</if>
+        <if test="endTime != null and endTime != ''">and o.report_time &lt;= #{endTime}</if>
+        group by timeLabel
+        order by timeLabel
+    </select>
+
+    <select id="countByLevel" resultType="java.util.LinkedHashMap">
+        select o.fault_level as faultLevel,
+               count(o.order_id) as faultCount
+        from repair_order o
+        left join elevator e on o.elevator_id = e.elevator_id
+        left join building b on e.building_id = b.building_id
+        where o.del_flag = '0'
+        <if test="communityId != null">and b.community_id = #{communityId}</if>
+        <if test="beginTime != null and beginTime != ''">and o.report_time &gt;= #{beginTime}</if>
+        <if test="endTime != null and endTime != ''">and o.report_time &lt;= #{endTime}</if>
+        group by o.fault_level
+        order by o.fault_level
+    </select>
+
+    <select id="countByFaultType" resultType="java.util.LinkedHashMap">
+        select ifnull(o.fault_type, 'other') as faultType,
+               count(o.order_id) as faultCount
+        from repair_order o
+        left join elevator e on o.elevator_id = e.elevator_id
+        left join building b on e.building_id = b.building_id
+        where o.del_flag = '0'
+        <if test="communityId != null">and b.community_id = #{communityId}</if>
+        <if test="beginTime != null and beginTime != ''">and o.report_time &gt;= #{beginTime}</if>
+        <if test="endTime != null and endTime != ''">and o.report_time &lt;= #{endTime}</if>
+        group by faultType
+        order by faultCount desc
+    </select>
+
+    <select id="avgAssignMinutes" resultType="java.lang.Double">
+        select avg(timestampdiff(minute, o.report_time, o.assign_time))
+        from repair_order o
+        left join elevator e on o.elevator_id = e.elevator_id
+        left join building b on e.building_id = b.building_id
+        where o.del_flag = '0' and o.assign_time is not null
+        <if test="communityId != null">and b.community_id = #{communityId}</if>
+        <if test="beginTime != null and beginTime != ''">and o.report_time &gt;= #{beginTime}</if>
+        <if test="endTime != null and endTime != ''">and o.report_time &lt;= #{endTime}</if>
+    </select>
+
+    <select id="avgRepairMinutes" resultType="java.lang.Double">
+        select avg(timestampdiff(minute, o.arrive_time, o.finish_time))
+        from repair_order o
+        left join elevator e on o.elevator_id = e.elevator_id
+        left join building b on e.building_id = b.building_id
+        where o.del_flag = '0' and o.arrive_time is not null and o.finish_time is not null
+        <if test="communityId != null">and b.community_id = #{communityId}</if>
+        <if test="beginTime != null and beginTime != ''">and o.report_time &gt;= #{beginTime}</if>
+        <if test="endTime != null and endTime != ''">and o.report_time &lt;= #{endTime}</if>
+    </select>
+
+    <select id="countByElevatorAndPeriod" resultType="int">
+        select count(1) from repair_order
+        where del_flag = '0' and elevator_id = #{elevatorId}
+        <if test="beginTime != null and beginTime != ''">and report_time &gt;= #{beginTime}</if>
+        <if test="endTime != null and endTime != ''">and report_time &lt;= #{endTime}</if>
+    </select>
+
+    <insert id="insertRepairOrder" parameterType="com.ruoyi.elevator.domain.RepairOrder" useGeneratedKeys="true" keyProperty="orderId">
+        insert into repair_order (
+            order_no, user_id, elevator_id, fault_desc, fault_type, fault_level, order_status,
+            reporter_phone, report_time, deadline_time, del_flag, create_by, create_time, remark
+        ) values (
+            #{orderNo}, #{userId}, #{elevatorId}, #{faultDesc}, #{faultType}, #{faultLevel}, #{orderStatus},
+            #{reporterPhone}, sysdate(), #{deadlineTime}, '0', #{createBy}, sysdate(), #{remark}
+        )
+    </insert>
+
+    <update id="updateRepairOrder" parameterType="com.ruoyi.elevator.domain.RepairOrder">
+        update repair_order
+        <set>
+            <if test="faultLevel != null and faultLevel != ''">fault_level = #{faultLevel},</if>
+            <if test="orderStatus != null and orderStatus != ''">order_status = #{orderStatus},</if>
+            <if test="assigneeId != null">assignee_id = #{assigneeId},</if>
+            <if test="assignerId != null">assigner_id = #{assignerId},</if>
+            <if test="rejectReason != null">reject_reason = #{rejectReason},</if>
+            <if test="assignTime != null">assign_time = #{assignTime},</if>
+            <if test="acceptTime != null">accept_time = #{acceptTime},</if>
+            <if test="arriveTime != null">arrive_time = #{arriveTime},</if>
+            <if test="finishTime != null">finish_time = #{finishTime},</if>
+            <if test="confirmTime != null">confirm_time = #{confirmTime},</if>
+            <if test="deadlineTime != null">deadline_time = #{deadlineTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = sysdate()
+        </set>
+        where order_id = #{orderId}
+    </update>
+
+    <update id="deleteRepairOrderByIds">
+        update repair_order set del_flag = '2' where order_id in
+        <foreach item="orderId" collection="array" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
+    </update>
+
+</mapper>
