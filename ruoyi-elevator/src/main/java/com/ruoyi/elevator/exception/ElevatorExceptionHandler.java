@@ -6,6 +6,8 @@ import com.ruoyi.common.utils.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -16,8 +18,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * 电梯业务异常处理器
  * 将电梯业务的领域异常转换为统一响应体，提示信息统一为中文可读文案
  *
+ * 必须排在框架的 GlobalExceptionHandler 前面：
+ * 两个都是 @RestControllerAdvice，不指定顺序时框架那个会先接住异常，
+ * 把带错误码的业务异常当成"未知异常"压成 500，前端拿不到具体错误码。
+ *
  * @author 董泽晟
  */
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
 public class ElevatorExceptionHandler
 {

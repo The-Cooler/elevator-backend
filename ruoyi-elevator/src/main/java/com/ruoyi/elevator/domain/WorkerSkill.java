@@ -70,6 +70,45 @@ public class WorkerSkill implements Serializable
     /** 派单推荐用：技能是否匹配 */
     private Boolean skillMatched;
 
+    /** 派单用：账号是否启用（0正常 1停用），停用的不能接单 */
+    private String userEnabled;
+
+    /** 派单用：当前是否可接单（在岗且账号启用），注册状态不在 work_status 里 */
+    private Boolean assignable;
+
+    /** 派单用：不可接单的原因，可接单时为空 */
+    private String unavailableReason;
+
+    public String getUserEnabled()
+    {
+        return userEnabled;
+    }
+
+    public void setUserEnabled(String userEnabled)
+    {
+        this.userEnabled = userEnabled;
+    }
+
+    public Boolean getAssignable()
+    {
+        return assignable;
+    }
+
+    public void setAssignable(Boolean assignable)
+    {
+        this.assignable = assignable;
+    }
+
+    public String getUnavailableReason()
+    {
+        return unavailableReason;
+    }
+
+    public void setUnavailableReason(String unavailableReason)
+    {
+        this.unavailableReason = unavailableReason;
+    }
+
     public Long getSkillId()
     {
         return skillId;

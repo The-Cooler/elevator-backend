@@ -19,9 +19,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 报修工单服务
@@ -66,6 +69,20 @@ public class RepairOrderService
     }
 
     /**
+     * 查询工单列表并逐条带上维修记录与业主证据
+     *
+     * 物业在待派单池挑单、维修员在待接单页决定接不接，都要先看到业主拍的现场照片，
+     * 所以证据随列表一次取回，不用点进详情才有。
+     */
+    public List<RepairOrder> selectRepairOrderListWithRecords(RepairOrder repairOrder)
+    {
+        List<RepairOrder> list = selectRepairOrderList(repairOrder);
+        attachRepairRecords(list);
+        attachEvidences(list);
+        return list;
+    }
+
+    /**
      * 查询工单详情，含证据、状态流转记录、维修记录
      */
     public RepairOrder selectRepairOrderById(Long orderId)
@@ -82,10 +99,25 @@ public class RepairOrderService
             throw new ElevatorException(ElevatorErrorCode.NO_DATA_PERMISSION.getMessage(),
                     ElevatorErrorCode.NO_DATA_PERMISSION.getCode());
         }
+        // 维修员只能查看指派给自己的工单。
+        // 写操作已有归属校验，读操作此前没有，维修员可以读到他人负责工单的报修人电话与流转记录。
+        if (isWorkerOnly() && !LoginUserUtil.getUserId().equals(order.getAssigneeId()))
+        {
+            throw new ElevatorException(ElevatorErrorCode.NO_DATA_PERMISSION.getMessage(),
+                    ElevatorErrorCode.NO_DATA_PERMISSION.getCode());
+        }
         order.setEvidenceList(repairEvidenceMapper.selectByOrderId(orderId));
         order.setStatusLogs(orderStatusLogService.selectByOrderId(orderId));
         order.setRepairRecord(repairRecordMapper.selectByOrderId(orderId));
         return order;
+    }
+
+    /**
+     * 是否只具备维修员身份（物业与管理员可兼看全部工单）
+     */
+    private boolean isWorkerOnly()
+    {
+        return LoginUserUtil.isWorker() && !LoginUserUtil.isProperty() && !LoginUserUtil.isAdmin();
     }
 
     /**
@@ -112,6 +144,54 @@ public class RepairOrderService
         RepairOrder query = new RepairOrder();
         query.setFaultLevel(faultLevel);
         return repairOrderMapper.selectRepairOrderList(query).size();
+    }
+
+    /**
+     * 为工单列表逐条附上维修记录，一次批量查询完成
+     * 列表页要展示维修记录入口，随列表取回，避免前端为每条工单单独请求
+     */
+    public void attachRepairRecords(List<RepairOrder> orders)
+    {
+        if (orders == null || orders.isEmpty())
+        {
+            return;
+        }
+        Long[] orderIds = orders.stream().map(RepairOrder::getOrderId).toArray(Long[]::new);
+        List<RepairRecord> records = repairRecordMapper.selectByOrderIds(orderIds);
+        Map<Long, List<RepairRecord>> grouped = new HashMap<>();
+        for (RepairRecord record : records)
+        {
+            grouped.computeIfAbsent(record.getOrderId(), k -> new ArrayList<>()).add(record);
+        }
+        for (RepairOrder order : orders)
+        {
+            order.setRepairRecords(grouped.getOrDefault(order.getOrderId(), new ArrayList<>()));
+        }
+    }
+
+    /**
+     * 为工单列表逐条附上业主上传的证据，一次批量查询完成
+     *
+     * 维修员要在接单前看到现场照片，才能判断带什么工具、能不能修，
+     * 所以证据必须随列表返回，不能等他点进详情才给。
+     */
+    public void attachEvidences(List<RepairOrder> orders)
+    {
+        if (orders == null || orders.isEmpty())
+        {
+            return;
+        }
+        Long[] orderIds = orders.stream().map(RepairOrder::getOrderId).toArray(Long[]::new);
+        List<RepairEvidence> all = repairEvidenceMapper.selectByOrderIds(orderIds);
+        Map<Long, List<RepairEvidence>> grouped = new HashMap<>();
+        for (RepairEvidence ev : all)
+        {
+            grouped.computeIfAbsent(ev.getOrderId(), k -> new ArrayList<>()).add(ev);
+        }
+        for (RepairOrder order : orders)
+        {
+            order.setEvidenceList(grouped.getOrDefault(order.getOrderId(), new ArrayList<>()));
+        }
     }
 
     /**
@@ -406,6 +486,9 @@ public class RepairOrderService
      * 按当前登录角色设置数据范围条件
      * 业主只能看本人的报修，维修员只能看指派给本人的工单；
      * 物业与维修员按其所属小区过滤，管理员不限制。对应论文表2-1 中角色职责与数据隔离要求。
+     *
+     * 非管理员的小区范围一律以登录用户所属小区为准，覆盖调用方传入的 communityId。
+     * 若只在传入值为空时才赋值，请求里带上 communityId 就能越权看到别的小区。
      */
     private void applyDataScope(RepairOrder repairOrder)
     {
@@ -418,11 +501,14 @@ public class RepairOrderService
         {
             repairOrder.setQueryAssigneeId(LoginUserUtil.getUserId());
         }
-        // 物业与维修员限定在所属小区内，管理员不限制
-        Long communityId = LoginUserUtil.getCommunityId();
-        if (communityId != null && repairOrder.getCommunityId() == null)
+        // 管理员不受小区限制，其余角色强制限定在所属小区内
+        if (!LoginUserUtil.isAdmin())
         {
-            repairOrder.setCommunityId(communityId);
+            Long communityId = LoginUserUtil.getCommunityId();
+            if (communityId != null)
+            {
+                repairOrder.setCommunityId(communityId);
+            }
         }
     }
 
@@ -444,10 +530,23 @@ public class RepairOrderService
 
     /**
      * 保存维修记录，供模块三调用
+     * 同一轮维修内，到场、排查、完工都改同一条记录；
+     * updateRepairRecord 的 set 片段按字段判空，传 null 的字段保持原值不动。
      */
     public int saveRepairRecord(RepairRecord record)
     {
-        RepairRecord exist = repairRecordMapper.selectByOrderId(record.getOrderId());
+        return saveRepairRecord(record, false);
+    }
+
+    /**
+     * 保存维修记录
+     *
+     * @param startNew 是否另起一轮。业主申诉后的返工要传 true，
+     *                 否则第二次的处理说明会覆盖掉第一次的，首次维修内容丢失。
+     */
+    public int saveRepairRecord(RepairRecord record, boolean startNew)
+    {
+        RepairRecord exist = startNew ? null : repairRecordMapper.selectByOrderId(record.getOrderId());
         if (exist == null)
         {
             record.setCreateBy(LoginUserUtil.getUsername());
@@ -460,9 +559,19 @@ public class RepairOrderService
 
     /**
      * 获取维修记录
+     * 维修员只能看自己负责工单的记录，此前没有这层校验，可以读到他人维修记录
      */
     public RepairRecord getRepairRecord(Long orderId)
     {
+        if (isWorkerOnly())
+        {
+            RepairOrder order = repairOrderMapper.selectRepairOrderById(orderId);
+            if (order == null || !LoginUserUtil.getUserId().equals(order.getAssigneeId()))
+            {
+                throw new ElevatorException(ElevatorErrorCode.NO_DATA_PERMISSION.getMessage(),
+                        ElevatorErrorCode.NO_DATA_PERMISSION.getCode());
+            }
+        }
         return repairRecordMapper.selectByOrderId(orderId);
     }
 

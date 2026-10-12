@@ -37,13 +37,14 @@ public class RepairOrderController extends BaseController
 
     /**
      * 查询报修工单列表
+     * 列表要展示维修记录入口，随列表一并带上维修记录
      */
     @PreAuthorize("@ss.hasPermi('repair:order:list')")
     @GetMapping("/list")
     public TableDataInfo list(RepairOrder repairOrder)
     {
         startPage();
-        List<RepairOrder> list = repairOrderService.selectRepairOrderList(repairOrder);
+        List<RepairOrder> list = repairOrderService.selectRepairOrderListWithRecords(repairOrder);
         return getDataTable(list);
     }
 

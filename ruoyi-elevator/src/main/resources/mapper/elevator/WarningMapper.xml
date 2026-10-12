@@ -178,9 +178,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </update>
 
+    <!-- 管理员标记已读，不受接收人限制，预警是按角色分发的，没有发给管理员的记录 -->
+    <update id="updateReadForAdmin">
+        update warning_info set is_read = '1', read_time = sysdate()
+        where warning_id in
+        <foreach item="warningId" collection="warningIds" open="(" separator="," close=")">
+            #{warningId}
+        </foreach>
+    </update>
+
     <update id="updateAllRead" parameterType="Long">
         update warning_info set is_read = '1', read_time = sysdate()
         where receiver_id = #{receiverId} and is_read = '0'
+    </update>
+
+    <!-- 管理员处理全部未读预警，预警是按角色分发的，没有发给管理员的记录 -->
+    <update id="updateAllReadForAdmin">
+        update warning_info set is_read = '1', read_time = sysdate()
+        where is_read = '0'
     </update>
 
 </mapper>

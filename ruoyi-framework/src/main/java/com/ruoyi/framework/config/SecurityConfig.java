@@ -108,6 +108,11 @@ public class SecurityConfig
                     .requestMatchers("/common/cascade/community/list").permitAll()
                     // 静态资源，可匿名访问
                     .requestMatchers(HttpMethod.GET, "/", "/*.html", "/**.html", "/**.css", "/**.js", "/profile/**").permitAll()
+                    // 文件预览与下载要允许匿名访问。
+                    // <img>、<video> 这类标签发起的请求不会带上 Authorization 头，
+                    // 走鉴权的话浏览器拿回的是 JSON 错误，图片在页面上就是空白。
+                    // 文件按不可猜测的编号寻址，页面本身仍受登录守卫保护。
+                    .requestMatchers(HttpMethod.GET, "/common/file/preview/**", "/common/file/download/**").permitAll()
                     .requestMatchers("/swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**", "/druid/**").permitAll()
                     // 除上面外的所有请求全部需要鉴权认证
                     .anyRequest().authenticated();

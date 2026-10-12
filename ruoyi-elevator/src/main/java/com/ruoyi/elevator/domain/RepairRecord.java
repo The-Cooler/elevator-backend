@@ -3,6 +3,7 @@ package com.ruoyi.elevator.domain;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -29,6 +30,18 @@ public class RepairRecord implements Serializable
 
     /** 到场定位 */
     private String arriveLocation;
+
+    /** 到场时的经度，由浏览器定位取得 */
+    private BigDecimal arriveLongitude;
+
+    /** 到场时的纬度，由浏览器定位取得 */
+    private BigDecimal arriveLatitude;
+
+    /** 到场点与电梯台账坐标的距离（米） */
+    private Integer arriveDistance;
+
+    /** 是否演示打卡（0正常 1演示模式，未做位置校验） */
+    private String demoFlag;
 
     /** 排查记录 */
     private String investigateNote;
@@ -117,6 +130,46 @@ public class RepairRecord implements Serializable
     public void setArriveLocation(String arriveLocation)
     {
         this.arriveLocation = arriveLocation;
+    }
+
+    public BigDecimal getArriveLongitude()
+    {
+        return arriveLongitude;
+    }
+
+    public void setArriveLongitude(BigDecimal arriveLongitude)
+    {
+        this.arriveLongitude = arriveLongitude;
+    }
+
+    public BigDecimal getArriveLatitude()
+    {
+        return arriveLatitude;
+    }
+
+    public void setArriveLatitude(BigDecimal arriveLatitude)
+    {
+        this.arriveLatitude = arriveLatitude;
+    }
+
+    public Integer getArriveDistance()
+    {
+        return arriveDistance;
+    }
+
+    public void setArriveDistance(Integer arriveDistance)
+    {
+        this.arriveDistance = arriveDistance;
+    }
+
+    public String getDemoFlag()
+    {
+        return demoFlag;
+    }
+
+    public void setDemoFlag(String demoFlag)
+    {
+        this.demoFlag = demoFlag;
     }
 
     public String getInvestigateNote()

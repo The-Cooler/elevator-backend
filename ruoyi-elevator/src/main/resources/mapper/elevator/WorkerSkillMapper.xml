@@ -20,36 +20,65 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="workerName"    column="worker_name"    />
         <result property="workerPhone"   column="worker_phone"   />
         <result property="communityName" column="community_name" />
+        <result property="userEnabled"   column="user_enabled"   />
+        <result property="assignable"    column="assignable"     />
+        <result property="unavailableReason" column="unavailable_reason" />
     </resultMap>
 
+    <!--
+        维修员列表的公共查询。
+        只要还是维修员就列出来，含休息、请假、账号停用、以及还没配技能表的人，
+        不在这里过滤，让调用方按需筛；账号已删除的不算维修员，排除。
+        注意：本片段不带 where，调用方自己接条件。
+    -->
     <sql id="selectWorkerSkillVo">
         select ws.skill_id, ws.worker_id, ws.community_id, ws.skill_tags, ws.work_status,
                ws.current_load, ws.total_finished, ws.avg_response,
                ws.create_by, ws.create_time, ws.update_by, ws.update_time,
                u.nick_name as worker_name,
                u.phonenumber as worker_phone,
-               c.community_name as community_name
-        from worker_skill ws
-        left join sys_user u on ws.worker_id = u.user_id
+               u.status as user_enabled,
+               c.community_name as community_name,
+               <!-- 能否接单：账号启用 且 在岗 -->
+               (case when u.status = '0' and ifnull(ws.work_status, '0') = '0'
+                     then 1 else 0 end) as assignable,
+               <!-- 不可接单的原因，可接单时为空串 -->
+               (case
+                     when u.status != '0' and ifnull(ws.work_status, '0') = '0' then '账号已停用'
+                     when u.status != '0' and ws.work_status = '1' then '账号已停用、休息中'
+                     when u.status != '0' and ws.work_status = '2' then '账号已停用、请假中'
+                     when ws.work_status = '1' then '休息中'
+                     when ws.work_status = '2' then '请假中'
+                     else '' end) as unavailable_reason
+        from sys_user u
+        inner join sys_user_role ur on ur.user_id = u.user_id
+        inner join sys_role r on r.role_id = ur.role_id and r.status = '0' and r.del_flag = '0'
+        left join worker_skill ws on ws.worker_id = u.user_id
         left join community c on ws.community_id = c.community_id
     </sql>
 
     <select id="selectWorkerSkillList" parameterType="com.ruoyi.elevator.domain.WorkerSkill" resultMap="WorkerSkillResult">
         <include refid="selectWorkerSkillVo"/>
         <where>
+            r.role_key = 'worker' and u.del_flag = '0'
             <if test="workerId != null">and ws.worker_id = #{workerId}</if>
             <if test="communityId != null">and ws.community_id = #{communityId}</if>
             <if test="workStatus != null and workStatus != ''">and ws.work_status = #{workStatus}</if>
             <if test="workerName != null and workerName != ''">and u.nick_name like concat('%', #{workerName}, '%')</if>
         </where>
-        order by ws.skill_id
+        order by (ws.skill_id is null) asc, ws.skill_id asc, u.user_id asc
     </select>
 
+    <!-- 按维修员ID取人，手动指定派单用；不限在岗、不限账号启用，人必须能找到 -->
     <select id="selectByWorkerId" parameterType="Long" resultMap="WorkerSkillResult">
         <include refid="selectWorkerSkillVo"/>
-        where ws.worker_id = #{workerId}
+        <where>
+            r.role_key = 'worker' and u.del_flag = '0'
+            and ws.worker_id = #{workerId}
+        </where>
         limit 1
     </select>
+
 
     <select id="selectCandidates" resultMap="WorkerSkillResult">
         select ws.skill_id, ws.worker_id, ws.community_id, ws.skill_tags, ws.work_status,

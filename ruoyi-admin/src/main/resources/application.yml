@@ -7,7 +7,7 @@ ruoyi:
   # 版权年份
   copyrightYear: 2026
   # 文件路径 示例（ Windows配置D:/ruoyi/uploadPath，Linux配置 /home/ruoyi/uploadPath）
-  profile: E:/Desktop/2023毕设/董/项目/backend/uploadPath
+  profile: filepath
   # 获取ip地址开关
   addressEnabled: false
   # 验证码类型 math 数字计算 char 字符验证
@@ -95,8 +95,9 @@ token:
   header: Authorization
   # 令牌密钥
   secret: abcdefghijklmnopqrstuvwxyz
-  # 令牌有效期（默认30分钟）
-  expireTime: 30
+  # 令牌有效期（分钟），每次请求剩余不足 20 分钟会自动续期
+  # 取值 8 小时，避免开发调试期间频繁重新登录
+  expireTime: 480
 
 # MyBatis配置
 mybatis:

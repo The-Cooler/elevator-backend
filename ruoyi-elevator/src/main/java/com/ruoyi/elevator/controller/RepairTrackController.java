@@ -7,6 +7,7 @@ import com.ruoyi.elevator.domain.RepairOrder;
 import com.ruoyi.elevator.service.RepairOrderService;
 import com.ruoyi.elevator.util.LoginUserUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,18 +49,20 @@ public class RepairTrackController extends BaseController
     /**
      * 业主查询本人的报修记录
      */
+    @PreAuthorize("@ss.hasPermi('repair:track:list')")
     @GetMapping("/myList")
     public TableDataInfo myList(RepairOrder repairOrder)
     {
         startPage();
         repairOrder.setQueryUserId(LoginUserUtil.getUserId());
-        List<RepairOrder> list = repairOrderService.selectRepairOrderList(repairOrder);
+        List<RepairOrder> list = repairOrderService.selectRepairOrderListWithRecords(repairOrder);
         return getDataTable(list);
     }
 
     /**
      * 查询工单进度详情，含证据、状态时间轴与维修记录
      */
+    @PreAuthorize("@ss.hasPermi('repair:track:query')")
     @GetMapping("/{orderId}")
     public AjaxResult detail(@PathVariable("orderId") Long orderId)
     {
@@ -98,6 +101,7 @@ public class RepairTrackController extends BaseController
     /**
      * 查询工单全流程时间轴，管理端报修进度跟踪页使用
      */
+    @PreAuthorize("@ss.hasPermi('repair:track:query')")
     @GetMapping("/timeline/{orderId}")
     public AjaxResult timeline(@PathVariable("orderId") Long orderId)
     {
@@ -107,11 +111,12 @@ public class RepairTrackController extends BaseController
     /**
      * 查询全部工单进度，管理端报修进度跟踪页使用
      */
+    @PreAuthorize("@ss.hasPermi('repair:track:list')")
     @GetMapping("/list")
     public TableDataInfo list(RepairOrder repairOrder)
     {
         startPage();
-        List<RepairOrder> list = repairOrderService.selectRepairOrderList(repairOrder);
+        List<RepairOrder> list = repairOrderService.selectRepairOrderListWithRecords(repairOrder);
         return getDataTable(list);
     }
 

@@ -17,6 +17,11 @@ public interface RepairRecordMapper
     RepairRecord selectByOrderId(Long orderId);
 
     /**
+     * 按工单ID批量查询维修记录，列表页一次取回
+     */
+    List<RepairRecord> selectByOrderIds(Long[] orderIds);
+
+    /**
      * 查询维修记录列表
      */
     List<RepairRecord> selectRepairRecordList(RepairRecord repairRecord);

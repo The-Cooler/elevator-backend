@@ -71,8 +71,7 @@ create table sys_user (
 -- ----------------------------
 -- 初始化-用户信息表数据
 -- ----------------------------
-insert into sys_user values(1, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', sysdate(), sysdate(), 'admin', sysdate(), '', null, '管理员', null);
-insert into sys_user values(2, 'ry',    '若依', '00', 'ry@qq.com',  '15666666666', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', sysdate(), sysdate(), 'admin', sysdate(), '', null, '测试员', null);
+insert into sys_user values(1, 'admin', '系统管理员', '00', 'ry@163.com', '15888888888', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', sysdate(), sysdate(), 'admin', sysdate(), '', null, '管理员', null);
 
 
 -- ----------------------------
@@ -534,10 +533,8 @@ create table sys_notice (
 
 -- ----------------------------
 -- 初始化-公告信息表数据
+-- 公告由管理员在管理端自行发布，不预置上游框架自带的演示公告
 -- ----------------------------
-insert into sys_notice values('1', '温馨提醒：2018-07-01 若依新版本发布啦', '2', '新版本内容', '0', 'admin', sysdate(), '', null, '管理员');
-insert into sys_notice values('2', '维护通知：2018-07-01 若依系统凌晨维护', '1', '维护内容',   '0', 'admin', sysdate(), '', null, '管理员');
-insert into sys_notice values('3', '若依开源框架介绍', '1', '<p><span style=\"color: rgb(230, 0, 0);\">项目介绍</span></p><p><font color=\"#333333\">RuoYi开源项目是为企业用户定制的后台脚手架框架，为企业打造的一站式解决方案，降低企业开发成本，提升开发效率。主要包括用户管理、角色管理、部门管理、菜单管理、参数管理、字典管理、</font><span style=\"color: rgb(51, 51, 51);\">岗位管理</span><span style=\"color: rgb(51, 51, 51);\">、定时任务</span><span style=\"color: rgb(51, 51, 51);\">、</span><span style=\"color: rgb(51, 51, 51);\">服务监控、登录日志、操作日志、代码生成等功能。其中，还支持多数据源、数据权限、国际化、Redis缓存、Docker部署、滑动验证码、第三方认证登录、分布式事务、</span><font color=\"#333333\">分布式文件存储</font><span style=\"color: rgb(51, 51, 51);\">、分库分表处理等技术特点。</span></p><p><img src=\"https://foruda.gitee.com/images/1773931848342439032/a4d22313_1815095.png\" style=\"width: 64px;\"><br></p><p><span style=\"color: rgb(230, 0, 0);\">官网及演示</span></p><p><span style=\"color: rgb(51, 51, 51);\">若依官网地址：&nbsp;</span><a href=\"http://ruoyi.vip\" target=\"_blank\">http://ruoyi.vip</a><a href=\"http://ruoyi.vip\" target=\"_blank\"></a></p><p><span style=\"color: rgb(51, 51, 51);\">若依文档地址：&nbsp;</span><a href=\"http://doc.ruoyi.vip\" target=\"_blank\">http://doc.ruoyi.vip</a><br></p><p><span style=\"color: rgb(51, 51, 51);\">演示地址【不分离版】：&nbsp;</span><a href=\"http://demo.ruoyi.vip\" target=\"_blank\">http://demo.ruoyi.vip</a></p><p><span style=\"color: rgb(51, 51, 51);\">演示地址【分离版本】：&nbsp;</span><a href=\"http://vue.ruoyi.vip\" target=\"_blank\">http://vue.ruoyi.vip</a></p><p><span style=\"color: rgb(51, 51, 51);\">演示地址【微服务版】：&nbsp;</span><a href=\"http://cloud.ruoyi.vip\" target=\"_blank\">http://cloud.ruoyi.vip</a></p><p><span style=\"color: rgb(51, 51, 51);\">演示地址【移动端版】：&nbsp;</span><a href=\"http://h5.ruoyi.vip\" target=\"_blank\">http://h5.ruoyi.vip</a></p><p><br style=\"color: rgb(48, 49, 51); font-family: &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif; font-size: 12px;\"></p>', '0', 'admin', sysdate(), '', null, '管理员');
 
 
 -- ----------------------------
@@ -794,6 +791,8 @@ create table elevator (
   service_years     int(4)          default 0                  comment '使用年限',
   cert_file_id      bigint(20)      default null               comment '年检报告附件ID',
   status            char(1)         default '0'                comment '状态（0正常运行 1停梯检修 2已报废）',
+  longitude         decimal(10,7)   default null               comment '经度，维修员到场打卡的比对基准',
+  latitude          decimal(10,7)   default null               comment '纬度，维修员到场打卡的比对基准',
   del_flag          char(1)         default '0'                comment '删除标志（0代表存在 2代表删除）',
   create_by         varchar(64)     default ''                 comment '创建者',
   create_time       datetime                                   comment '创建时间',
@@ -889,6 +888,10 @@ create table repair_record (
   worker_id         bigint(20)      not null                   comment '维修员ID',
   arrive_time       datetime                                   comment '到场时间',
   arrive_location   varchar(200)    default ''                 comment '到场定位',
+  arrive_longitude  decimal(10,7)   default null               comment '到场时的经度，由浏览器定位取得',
+  arrive_latitude   decimal(10,7)   default null               comment '到场时的纬度，由浏览器定位取得',
+  arrive_distance   int(11)         default null               comment '到场点与电梯台账坐标的距离（米）',
+  demo_flag         char(1)         default '0'                comment '是否演示打卡（0正常 1演示模式，未做位置校验）',
   investigate_note  varchar(1000)   default ''                 comment '排查记录',
   repair_desc       varchar(1000)   default ''                 comment '维修说明',
   fault_reason      varchar(30)     default ''                 comment '故障原因（normal_wear正常磨损 parts_damage配件损坏 improper_use使用不当 external外因 other其他）',
@@ -1010,6 +1013,10 @@ create table inspection_record (
   executor_id       bigint(20)      default null               comment '执行人ID',
   clock_in_time     datetime                                   comment '打卡时间',
   clock_in_location varchar(200)    default ''                 comment '打卡位置',
+  clock_in_longitude decimal(10,7)  default null               comment '打卡时的经度，由浏览器定位取得',
+  clock_in_latitude decimal(10,7)   default null               comment '打卡时的纬度，由浏览器定位取得',
+  clock_in_distance int(11)         default null               comment '打卡点与电梯台账坐标的距离（米）',
+  demo_flag         char(1)         default '0'                comment '是否演示打卡（0正常 1演示模式，未做位置校验）',
   execute_date      date                                       comment '实际执行日期',
   execute_result    varchar(20)     default 'pending'          comment '执行结果（pending待执行 normal正常 abnormal异常）',
   abnormal_desc     varchar(1000)   default ''                 comment '异常说明',
@@ -1199,7 +1206,7 @@ insert into sys_menu values('2102', '基础信息管理', '2000', '3', 'info', '
 
 -- ---------- 模块二 故障报修与跟踪 ----------
 insert into sys_menu values('2001', '故障报修与跟踪', '0', '2', 'repair', null, '', '', 1, 0, 'M', '0', '0', '', 'message', 'admin', sysdate(), '', null, '模块二目录');
-insert into sys_menu values('2103', '故障一键报修', '2001', '1', 'order', 'repair/order/index', '', '', 1, 0, 'C', '0', '0', 'repair:order:list', 'form', 'admin', sysdate(), '', null, '故障一键报修菜单');
+insert into sys_menu values('2103', '故障一键报修', '2001', '1', 'repairOrder', 'repair/order/index', '', '', 1, 0, 'C', '0', '0', 'repair:order:list', 'form', 'admin', sysdate(), '', null, '故障一键报修菜单');
 insert into sys_menu values('2104', '故障分级管理', '2001', '2', 'level', 'repair/level/index', '', '', 1, 0, 'C', '0', '0', 'repair:level:list', 'star', 'admin', sysdate(), '', null, '故障分级管理菜单');
 insert into sys_menu values('2105', '多媒体证据上传', '2001', '3', 'evidence', 'repair/evidence/index', '', '', 1, 0, 'C', '0', '0', 'repair:evidence:list', 'upload', 'admin', sysdate(), '', null, '多媒体证据上传菜单');
 insert into sys_menu values('2106', '报修进度跟踪', '2001', '4', 'track', 'repair/track/index', '', '', 1, 0, 'C', '0', '0', 'repair:track:list', 'time-range', 'admin', sysdate(), '', null, '报修进度跟踪菜单');
@@ -1207,7 +1214,7 @@ insert into sys_menu values('2106', '报修进度跟踪', '2001', '4', 'track', 
 -- ---------- 模块三 工单调度与执行 ----------
 insert into sys_menu values('2002', '工单调度与执行', '0', '3', 'order', null, '', '', 1, 0, 'M', '0', '0', '', 'job', 'admin', sysdate(), '', null, '模块三目录');
 insert into sys_menu values('2107', '智能派单', '2002', '1', 'dispatch', 'order/dispatch/index', '', '', 1, 0, 'C', '0', '0', 'order:dispatch:list', 'guide', 'admin', sysdate(), '', null, '智能派单菜单');
-insert into sys_menu values('2108', '维保人员接单', '2002', '2', 'accept', 'order/accept/index', '', '', 1, 0, 'C', '0', '0', 'order:accept:list', 'checkbox', 'admin', sysdate(), '', null, '维保人员接单菜单');
+insert into sys_menu values('2108', '维修人员接单', '2002', '2', 'accept', 'order/accept/index', '', '', 1, 0, 'C', '0', '0', 'order:accept:list', 'checkbox', 'admin', sysdate(), '', null, '维修人员接单菜单');
 insert into sys_menu values('2109', '维修过程管理', '2002', '3', 'process', 'order/process/index', '', '', 1, 0, 'C', '0', '0', 'order:process:list', 'edit', 'admin', sysdate(), '', null, '维修过程管理菜单');
 insert into sys_menu values('2110', '工单异常处理', '2002', '4', 'exception', 'order/exception/index', '', '', 1, 0, 'C', '0', '0', 'order:exception:list', 'bug', 'admin', sysdate(), '', null, '工单异常处理菜单');
 
@@ -1362,7 +1369,7 @@ insert into sys_user
    status, del_flag, login_ip, login_date, pwd_update_date, create_by, create_time, remark)
 values
   (100, 1, 'wuye01', '物业管理员', '00', 'wuye01@elevator.com', '13800000001', '1', '',
-   '$2a$10$gyEgAsudVRZUUksP49d6geVDVNz6W5gWBdzlJ7ssKxdf07z1XwRIi',
+   '$2a$10$pdXrbtI9oylyNZP2jNorMOFsPnxkobyrXlZ1xzSj7nCAngvoz2pBC',
    '0', '0', '127.0.0.1', sysdate(), sysdate(), 'admin', sysdate(), '阳光家园小区物业管理员');
 
 insert into sys_user
@@ -1370,7 +1377,7 @@ insert into sys_user
    status, del_flag, login_ip, login_date, pwd_update_date, create_by, create_time, remark)
 values
   (101, 1, 'weixiu01', '维修员王师傅', '00', 'weixiu01@elevator.com', '13800000002', '1', '',
-   '$2a$10$gyEgAsudVRZUUksP49d6geVDVNz6W5gWBdzlJ7ssKxdf07z1XwRIi',
+   '$2a$10$pdXrbtI9oylyNZP2jNorMOFsPnxkobyrXlZ1xzSj7nCAngvoz2pBC',
    '0', '0', '127.0.0.1', sysdate(), sysdate(), 'admin', sysdate(), '黑龙江安捷电梯维保有限公司，负责阳光家园小区');
 
 insert into sys_user
@@ -1378,7 +1385,7 @@ insert into sys_user
    status, del_flag, login_ip, login_date, pwd_update_date, create_by, create_time, remark)
 values
   (102, 1, 'yezhu01', '业主张阿姨', '00', 'yezhu01@elevator.com', '13800000003', '1', '',
-   '$2a$10$gyEgAsudVRZUUksP49d6geVDVNz6W5gWBdzlJ7ssKxdf07z1XwRIi',
+   '$2a$10$pdXrbtI9oylyNZP2jNorMOFsPnxkobyrXlZ1xzSj7nCAngvoz2pBC',
    '0', '0', '127.0.0.1', sysdate(), sysdate(), 'admin', sysdate(), '阳光家园小区1号楼1单元业主');
 
 insert into sys_user
@@ -1386,7 +1393,7 @@ insert into sys_user
    status, del_flag, login_ip, login_date, pwd_update_date, create_by, create_time, remark)
 values
   (103, 2, 'weixiu02', '维修员李师傅', '00', 'weixiu02@elevator.com', '13800000004', '1', '',
-   '$2a$10$gyEgAsudVRZUUksP49d6geVDVNz6W5gWBdzlJ7ssKxdf07z1XwRIi',
+   '$2a$10$pdXrbtI9oylyNZP2jNorMOFsPnxkobyrXlZ1xzSj7nCAngvoz2pBC',
    '0', '0', '127.0.0.1', sysdate(), sysdate(), 'admin', sysdate(), '哈尔滨华信机电设备有限公司，负责和平里小区');
 
 insert into sys_user
@@ -1394,7 +1401,7 @@ insert into sys_user
    status, del_flag, login_ip, login_date, pwd_update_date, create_by, create_time, remark)
 values
   (104, 3, 'weixiu03', '维修员赵师傅', '00', 'weixiu03@elevator.com', '13800000005', '1', '',
-   '$2a$10$gyEgAsudVRZUUksP49d6geVDVNz6W5gWBdzlJ7ssKxdf07z1XwRIi',
+   '$2a$10$pdXrbtI9oylyNZP2jNorMOFsPnxkobyrXlZ1xzSj7nCAngvoz2pBC',
    '0', '0', '127.0.0.1', sysdate(), sysdate(), 'admin', sysdate(), '黑龙江广日电梯工程有限公司，负责铁路新村小区');
 insert into sys_user_role values(100, 3);
 insert into sys_user_role values(101, 4);
@@ -1438,12 +1445,12 @@ insert into building values(5, 2, '4号楼', '1单元', 8, '0', '0', 'admin', sy
 insert into building values(6, 3, 'A座', '1单元', 11, '0', '0', 'admin', sysdate(), '', null, null);
 
 -- ---------- 电梯 ----------
-insert into elevator values(1, 'DT-A-001', '日立', 'HGE-1000', 1, '1单元', '黑龙江安捷电梯维保有限公司', '2010-06-01', 15, null, '0', '0', 'admin', sysdate(), '', null, '运行平稳，钢丝绳有轻微磨损');
-insert into elevator values(2, 'DT-A-002', '日立', 'HGE-1000', 2, '2单元', '黑龙江安捷电梯维保有限公司', '2010-06-01', 15, null, '0', '0', 'admin', sysdate(), '', null, '门系统偶有异响');
-insert into elevator values(3, 'DT-B-001', '三菱', 'LEHY-III', 3, '1单元', '哈尔滨华信机电设备有限公司', '2012-09-15', 13, null, '0', '0', 'admin', sysdate(), '', null, '');
-insert into elevator values(4, 'DT-C-001', '通力', 'KONE-3000', 4, '1单元', '哈尔滨华信机电设备有限公司', '2008-03-20', 18, null, '1', '0', 'admin', sysdate(), '', null, '使用年限长，已停梯待大修');
-insert into elevator values(5, 'DT-C-002', '奥的斯', 'OTIS-3200', 5, '1单元', '黑龙江安捷电梯维保有限公司', '2015-11-08', 10, null, '0', '0', 'admin', sysdate(), '', null, '');
-insert into elevator values(6, 'DT-D-001', '迅达', 'Schindler-3300', 6, '1单元', '黑龙江广日电梯工程有限公司', '2006-05-12', 20, null, '0', '0', 'admin', sysdate(), '', null, '老旧电梯，故障率偏高，重点监控');
+insert into elevator values(1, 'DT-A-001', '日立', 'HGE-1000', 1, '1单元', '黑龙江安捷电梯维保有限公司', '2010-06-01', 15, null, '0', 126.6178560, 45.7031890, '0', 'admin', sysdate(), '', null, '运行平稳，钢丝绳有轻微磨损');
+insert into elevator values(2, 'DT-A-002', '日立', 'HGE-1000', 2, '2单元', '黑龙江安捷电梯维保有限公司', '2010-06-01', 15, null, '0', 126.6181230, 45.7034120, '0', 'admin', sysdate(), '', null, '门系统偶有异响');
+insert into elevator values(3, 'DT-B-001', '三菱', 'LEHY-III', 3, '1单元', '哈尔滨华信机电设备有限公司', '2012-09-15', 13, null, '0', 126.6185470, 45.7028760, '0', 'admin', sysdate(), '', null, '');
+insert into elevator values(4, 'DT-C-001', '通力', 'KONE-3000', 4, '1单元', '哈尔滨华信机电设备有限公司', '2008-03-20', 18, null, '1', 126.6169120, 45.7558320, '0', 'admin', sysdate(), '', null, '使用年限长，已停梯待大修');
+insert into elevator values(5, 'DT-C-002', '奥的斯', 'OTIS-3200', 5, '1单元', '黑龙江安捷电梯维保有限公司', '2015-11-08', 10, null, '0', 126.6172450, 45.7561040, '0', 'admin', sysdate(), '', null, '');
+insert into elevator values(6, 'DT-D-001', '迅达', 'Schindler-3300', 6, '1单元', '黑龙江广日电梯工程有限公司', '2006-05-12', 20, null, '0', 126.6938960, 45.7387050, '0', 'admin', sysdate(), '', null, '老旧电梯，故障率偏高，重点监控');
 
 -- ---------- 维修员技能与区域 ----------
 insert into worker_skill values(1, 101, 1, '曳引机,门系统,控制系统', '0', 0, 0, 0, 'admin', sysdate(), '', null);
@@ -1511,44 +1518,100 @@ insert into maintain_plan values(10, '4号楼1单元季度检', 5, 'quarter', 90
 -- 只种已完成（record_status='finished'）的记录，健康评分的巡检合格率只统计已完成记录。
 -- 计划日期均落在近 90 天统计周期内。
 -- 记录 1：1 号楼 1 单元，4 次半月保 + 1 次季度检，检查项 50 项，异常 2 项
-insert into inspection_record values(1, 'XJ20260716100001', 1, 1, 'half_month', '2026-07-16', 101, '2026-07-16 09:12:00', '阳光家园小区1号楼1单元电梯机房', '2026-07-16', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(2, 'XJ20260801090002', 1, 1, 'half_month', '2026-08-01', 101, '2026-08-01 09:05:00', '阳光家园小区1号楼1单元电梯机房', '2026-08-01', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(3, 'XJ20260816091003', 1, 1, 'half_month', '2026-08-16', 101, '2026-08-16 09:20:00', '阳光家园小区1号楼1单元电梯机房', '2026-08-16', 'abnormal', '钢丝绳有轻微磨损，未达换绳标准，已记录观察', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(4, 'XJ20260901090504', 1, 1, 'half_month', '2026-09-01', 101, '2026-09-01 09:02:00', '阳光家园小区1号楼1单元电梯机房', '2026-09-01', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(5, 'XJ20260916091505', 1, 1, 'quarter', '2026-09-16', 101, '2026-09-16 09:35:00', '阳光家园小区1号楼1单元电梯机房', '2026-09-16', 'abnormal', '轿厢内应急照明电池电量偏低，已更换', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(1, 'XJ20260716100001', 1, 1, 'half_month', '2026-07-16', 101, '2026-07-16 09:12:00', '阳光家园小区1号楼1单元电梯机房', '2026-07-16', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(2, 'XJ20260801090002', 1, 1, 'half_month', '2026-08-01', 101, '2026-08-01 09:05:00', '阳光家园小区1号楼1单元电梯机房', '2026-08-01', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(3, 'XJ20260816091003', 1, 1, 'half_month', '2026-08-16', 101, '2026-08-16 09:20:00', '阳光家园小区1号楼1单元电梯机房', '2026-08-16', 'abnormal', '钢丝绳有轻微磨损，未达换绳标准，已记录观察', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(4, 'XJ20260901090504', 1, 1, 'half_month', '2026-09-01', 101, '2026-09-01 09:02:00', '阳光家园小区1号楼1单元电梯机房', '2026-09-01', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(5, 'XJ20260916091505', 1, 1, 'quarter', '2026-09-16', 101, '2026-09-16 09:35:00', '阳光家园小区1号楼1单元电梯机房', '2026-09-16', 'abnormal', '轿厢内应急照明电池电量偏低，已更换', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
 
 -- 记录 2：1 号楼 2 单元，门系统异响，异常项较多，检查项 50 项，异常 5 项
-insert into inspection_record values(6, 'XJ20260716103006', 2, 2, 'half_month', '2026-07-16', 101, '2026-07-16 10:30:00', '阳光家园小区1号楼2单元电梯机房', '2026-07-16', 'abnormal', '层门开合有卡阻，已调整门机', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(7, 'XJ20260801102007', 2, 2, 'half_month', '2026-08-01', 101, '2026-08-01 10:22:00', '阳光家园小区1号楼2单元电梯机房', '2026-08-01', 'abnormal', '门锁电气触点有轻微烧蚀，已打磨处理', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(8, 'XJ20260816104508', 2, 2, 'half_month', '2026-08-16', 101, '2026-08-16 10:45:00', '阳光家园小区1号楼2单元电梯机房', '2026-08-16', 'abnormal', '层门闭合到位但仍有异响', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(9, 'XJ20260901103209', 2, 2, 'half_month', '2026-09-01', 101, '2026-09-01 10:32:00', '阳光家园小区1号楼2单元电梯机房', '2026-09-01', 'abnormal', '门机皮带磨损，建议下次维保更换', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(10, 'XJ20260916110010', 2, 2, 'quarter', '2026-09-16', 101, '2026-09-16 11:00:00', '阳光家园小区1号楼2单元电梯机房', '2026-09-16', 'abnormal', '平层准确度偏差接近上限，已重新校准', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(6, 'XJ20260716103006', 2, 2, 'half_month', '2026-07-16', 101, '2026-07-16 10:30:00', '阳光家园小区1号楼2单元电梯机房', '2026-07-16', 'abnormal', '层门开合有卡阻，已调整门机', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(7, 'XJ20260801102007', 2, 2, 'half_month', '2026-08-01', 101, '2026-08-01 10:22:00', '阳光家园小区1号楼2单元电梯机房', '2026-08-01', 'abnormal', '门锁电气触点有轻微烧蚀，已打磨处理', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(8, 'XJ20260816104508', 2, 2, 'half_month', '2026-08-16', 101, '2026-08-16 10:45:00', '阳光家园小区1号楼2单元电梯机房', '2026-08-16', 'abnormal', '层门闭合到位但仍有异响', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(9, 'XJ20260901103209', 2, 2, 'half_month', '2026-09-01', 101, '2026-09-01 10:32:00', '阳光家园小区1号楼2单元电梯机房', '2026-09-01', 'abnormal', '门机皮带磨损，建议下次维保更换', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(10, 'XJ20260916110010', 2, 2, 'quarter', '2026-09-16', 101, '2026-09-16 11:00:00', '阳光家园小区1号楼2单元电梯机房', '2026-09-16', 'abnormal', '平层准确度偏差接近上限，已重新校准', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
 
 -- 记录 3：2 号楼 1 单元，检查项 40 项，异常 2 项
-insert into inspection_record values(11, 'XJ20260720140011', 3, 3, 'half_month', '2026-07-20', 103, '2026-07-20 14:10:00', '阳光家园小区2号楼1单元电梯机房', '2026-07-20', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(12, 'XJ20260805141012', 3, 3, 'half_month', '2026-08-05', 103, '2026-08-05 14:12:00', '阳光家园小区2号楼1单元电梯机房', '2026-08-05', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(13, 'XJ20260820142013', 3, 3, 'half_month', '2026-08-20', 103, '2026-08-20 14:20:00', '阳光家园小区2号楼1单元电梯机房', '2026-08-20', 'abnormal', '控制柜接触器动作有轻微异响', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(14, 'XJ20260920143014', 3, 3, 'quarter', '2026-09-20', 103, '2026-09-20 14:30:00', '阳光家园小区2号楼1单元电梯机房', '2026-09-20', 'abnormal', '底坑有少量积水，已清理并疏通排水', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(11, 'XJ20260720140011', 3, 3, 'half_month', '2026-07-20', 103, '2026-07-20 14:10:00', '阳光家园小区2号楼1单元电梯机房', '2026-07-20', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(12, 'XJ20260805141012', 3, 3, 'half_month', '2026-08-05', 103, '2026-08-05 14:12:00', '阳光家园小区2号楼1单元电梯机房', '2026-08-05', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(13, 'XJ20260820142013', 3, 3, 'half_month', '2026-08-20', 103, '2026-08-20 14:20:00', '阳光家园小区2号楼1单元电梯机房', '2026-08-20', 'abnormal', '控制柜接触器动作有轻微异响', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(14, 'XJ20260920143014', 3, 3, 'quarter', '2026-09-20', 103, '2026-09-20 14:30:00', '阳光家园小区2号楼1单元电梯机房', '2026-09-20', 'abnormal', '底坑有少量积水，已清理并疏通排水', 9, 1, 0, 'finished', '0', 'admin', sysdate(), '', null);
 
 -- 记录 4：3 号楼 1 单元，已停梯待大修，仅 2 次记录，检查项 20 项，异常 6 项
-insert into inspection_record values(15, 'XJ20260710150015', 4, 4, 'half_month', '2026-07-10', 103, '2026-07-10 15:05:00', '和平里小区3号楼1单元电梯机房', '2026-07-10', 'abnormal', '曳引机减速箱油质乳化，钢丝绳锈蚀，已上报大修', 7, 3, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(16, 'XJ20260725151016', 4, 4, 'half_month', '2026-07-25', 103, '2026-07-25 15:10:00', '和平里小区3号楼1单元电梯机房', '2026-07-25', 'abnormal', '制动器间隙超标，限速器动作不灵活，已停梯', 7, 3, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(15, 'XJ20260710150015', 4, 4, 'half_month', '2026-07-10', 103, '2026-07-10 15:05:00', '和平里小区3号楼1单元电梯机房', '2026-07-10', 'abnormal', '曳引机减速箱油质乳化，钢丝绳锈蚀，已上报大修', 7, 3, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(16, 'XJ20260725151016', 4, 4, 'half_month', '2026-07-25', 103, '2026-07-25 15:10:00', '和平里小区3号楼1单元电梯机房', '2026-07-25', 'abnormal', '制动器间隙超标，限速器动作不灵活，已停梯', 7, 3, 0, 'finished', '0', 'admin', sysdate(), '', null);
 
 -- 记录 5：4 号楼 1 单元，投用年限较短，检查项 60 项，异常 0 项
-insert into inspection_record values(17, 'XJ20260715160017', 5, 5, 'half_month', '2026-07-15', 104, '2026-07-15 16:00:00', '和平里小区4号楼1单元电梯机房', '2026-07-15', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(18, 'XJ20260730160518', 5, 5, 'half_month', '2026-07-30', 104, '2026-07-30 16:05:00', '和平里小区4号楼1单元电梯机房', '2026-07-30', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(19, 'XJ20260814161019', 5, 5, 'half_month', '2026-08-14', 104, '2026-08-14 16:10:00', '和平里小区4号楼1单元电梯机房', '2026-08-14', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(20, 'XJ20260829161520', 5, 5, 'half_month', '2026-08-29', 104, '2026-08-29 16:15:00', '和平里小区4号楼1单元电梯机房', '2026-08-29', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(21, 'XJ20260913162021', 5, 5, 'half_month', '2026-09-13', 104, '2026-09-13 16:20:00', '和平里小区4号楼1单元电梯机房', '2026-09-13', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(22, 'XJ20260928162522', 5, 5, 'quarter', '2026-09-28', 104, '2026-09-28 16:25:00', '和平里小区4号楼1单元电梯机房', '2026-09-28', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(17, 'XJ20260715160017', 5, 5, 'half_month', '2026-07-15', 104, '2026-07-15 16:00:00', '和平里小区4号楼1单元电梯机房', '2026-07-15', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(18, 'XJ20260730160518', 5, 5, 'half_month', '2026-07-30', 104, '2026-07-30 16:05:00', '和平里小区4号楼1单元电梯机房', '2026-07-30', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(19, 'XJ20260814161019', 5, 5, 'half_month', '2026-08-14', 104, '2026-08-14 16:10:00', '和平里小区4号楼1单元电梯机房', '2026-08-14', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(20, 'XJ20260829161520', 5, 5, 'half_month', '2026-08-29', 104, '2026-08-29 16:15:00', '和平里小区4号楼1单元电梯机房', '2026-08-29', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(21, 'XJ20260913162021', 5, 5, 'half_month', '2026-09-13', 104, '2026-09-13 16:20:00', '和平里小区4号楼1单元电梯机房', '2026-09-13', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(22, 'XJ20260928162522', 5, 5, 'quarter', '2026-09-28', 104, '2026-09-28 16:25:00', '和平里小区4号楼1单元电梯机房', '2026-09-28', 'normal', '', 10, 0, 0, 'finished', '0', 'admin', sysdate(), '', null);
 
 -- 记录 6：A 座 1 单元，老旧且故障率高，检查项 80 项，异常 16 项
-insert into inspection_record values(23, 'XJ20260708170023', 6, 6, 'half_month', '2026-07-08', 104, '2026-07-08 17:00:00', '铁路新村小区A座1单元电梯机房', '2026-07-08', 'abnormal', '曳引机运行振动偏大，钢丝绳断丝 3 根', 8, 2, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(24, 'XJ20260722170524', 6, 6, 'half_month', '2026-07-22', 104, '2026-07-22 17:05:00', '铁路新村小区A座1单元电梯机房', '2026-07-22', 'abnormal', '制动器动作迟缓，平层偏差超标', 8, 2, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(25, 'XJ20260805171025', 6, 6, 'half_month', '2026-08-05', 104, '2026-08-05 17:10:00', '铁路新村小区A座1单元电梯机房', '2026-08-05', 'abnormal', '层门卡阻，门锁触点烧蚀，已临时处理', 8, 2, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(26, 'XJ20260819171526', 6, 6, 'half_month', '2026-08-19', 104, '2026-08-19 17:15:00', '铁路新村小区A座1单元电梯机房', '2026-08-19', 'abnormal', '控制柜接触器频繁动作，触点磨损明显', 8, 2, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(27, 'XJ20260902172027', 6, 6, 'half_month', '2026-09-02', 104, '2026-09-02 17:20:00', '铁路新村小区A座1单元电梯机房', '2026-09-02', 'abnormal', '导轨润滑不足，导靴磨损量接近上限', 8, 2, 0, 'finished', '0', 'admin', sysdate(), '', null);
-insert into inspection_record values(28, 'XJ20260916172528', 6, 6, 'quarter', '2026-09-16', 104, '2026-09-16 17:25:00', '铁路新村小区A座1单元电梯机房', '2026-09-16', 'abnormal', '补偿链磨损，随行电缆保护层破损', 8, 2, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(23, 'XJ20260708170023', 6, 6, 'half_month', '2026-07-08', 104, '2026-07-08 17:00:00', '铁路新村小区A座1单元电梯机房', '2026-07-08', 'abnormal', '曳引机运行振动偏大，钢丝绳断丝 3 根', 8, 2, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(24, 'XJ20260722170524', 6, 6, 'half_month', '2026-07-22', 104, '2026-07-22 17:05:00', '铁路新村小区A座1单元电梯机房', '2026-07-22', 'abnormal', '制动器动作迟缓，平层偏差超标', 8, 2, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(25, 'XJ20260805171025', 6, 6, 'half_month', '2026-08-05', 104, '2026-08-05 17:10:00', '铁路新村小区A座1单元电梯机房', '2026-08-05', 'abnormal', '层门卡阻，门锁触点烧蚀，已临时处理', 8, 2, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(26, 'XJ20260819171526', 6, 6, 'half_month', '2026-08-19', 104, '2026-08-19 17:15:00', '铁路新村小区A座1单元电梯机房', '2026-08-19', 'abnormal', '控制柜接触器频繁动作，触点磨损明显', 8, 2, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(27, 'XJ20260902172027', 6, 6, 'half_month', '2026-09-02', 104, '2026-09-02 17:20:00', '铁路新村小区A座1单元电梯机房', '2026-09-02', 'abnormal', '导轨润滑不足，导靴磨损量接近上限', 8, 2, 0, 'finished', '0', 'admin', sysdate(), '', null);
+insert into inspection_record
+  (record_id, record_no, plan_id, elevator_id, maintain_type, plan_date, executor_id, clock_in_time, clock_in_location, execute_date, execute_result, abnormal_desc, normal_count, abnormal_count, na_count, record_status, del_flag, create_by, create_time, update_by, update_time)
+values(28, 'XJ20260916172528', 6, 6, 'quarter', '2026-09-16', 104, '2026-09-16 17:25:00', '铁路新村小区A座1单元电梯机房', '2026-09-16', 'abnormal', '补偿链磨损，随行电缆保护层破损', 8, 2, 0, 'finished', '0', 'admin', sysdate(), '', null);
 
 -- ---------- 故障工单 ----------
 -- 健康评分的故障率统计周期为近 90 天，按 report_time 过滤，故报修时间均落在 2026-07 之后。
@@ -1593,6 +1656,137 @@ insert into repair_order values(11, 'BX20260919153011', 102, 2, '电梯按钮失
 insert into repair_order values(12, 'BX20260908110012', 102, 3, '电梯运行中有轻微异响', 'noise', '1', 'confirmed',
   '13800000003', '2026-09-08 11:00:00', '2026-09-08 11:20:00', '2026-09-08 11:30:00', '2026-09-08 14:00:00', '2026-09-08 16:00:00', '2026-09-09 09:00:00',
   103, 100, null, '2026-09-08 11:40:00', '0', 'admin', sysdate(), '', null, '控制柜接触器异响，已更换');
+
+-- 维修记录：与上面 1-11 号已闭环工单一一对应，物业「维修过程查看」与工单详情的维修记录取自本表
+insert into repair_record
+  (record_id, order_id, worker_id, arrive_time, arrive_location, investigate_note, repair_desc, fault_reason, replace_parts, finish_time, result_file_id, create_by, create_time, update_by, update_time)
+values(1, 1, 104, '2026-07-22 10:48:00', '铁路新村小区 A座 1单元 1层',
+  '到达现场确认轿厢停在 3 层与 4 层之间，两人被困，先手动盘车至平层放人',
+  '手动盘车放人后检查限速器与安全钳，复位安全回路，试运行恢复正常',
+  '限速器误动作触发安全回路', '限速器复位弹簧 1 套', '2026-07-22 12:30:00', null, 'admin', sysdate(), null, null);
+insert into repair_record
+  (record_id, order_id, worker_id, arrive_time, arrive_location, investigate_note, repair_desc, fault_reason, replace_parts, finish_time, result_file_id, create_by, create_time, update_by, update_time)
+values(2, 2, 104, '2026-08-03 15:30:00', '铁路新村小区 A座 1单元 1层',
+  '检查层门地坎有异物，门机力矩偏小',
+  '清理地坎异物并调整门机力矩，反复开合 20 次无卡阻',
+  '层门地坎卡阻', '无', '2026-08-03 17:00:00', null, 'admin', sysdate(), null, null);
+insert into repair_record
+  (record_id, order_id, worker_id, arrive_time, arrive_location, investigate_note, repair_desc, fault_reason, replace_parts, finish_time, result_file_id, create_by, create_time, update_by, update_time)
+values(3, 3, 104, '2026-08-18 11:20:00', '铁路新村小区 A座 1单元 6层',
+  '随梯运行听音定位，异响来自轿厢导靴与导轨摩擦',
+  '更换四只导靴并加注润滑油，试运行异响消除',
+  '导靴磨损超限', '导靴 4 只、导轨油 1 桶', '2026-08-18 15:00:00', null, 'admin', sysdate(), null, null);
+insert into repair_record
+  (record_id, order_id, worker_id, arrive_time, arrive_location, investigate_note, repair_desc, fault_reason, replace_parts, finish_time, result_file_id, create_by, create_time, update_by, update_time)
+values(4, 4, 104, '2026-09-05 16:50:00', '铁路新村小区 A座 1单元 1层',
+  '控制柜内接触器吸合时有明显打火痕迹，触点烧蚀',
+  '更换主接触器并紧固接线端子，恢复运行观察 2 小时无异常',
+  '主接触器触点烧蚀', '交流接触器 1 台', '2026-09-05 21:00:00', null, 'admin', sysdate(), null, null);
+insert into repair_record
+  (record_id, order_id, worker_id, arrive_time, arrive_location, investigate_note, repair_desc, fault_reason, replace_parts, finish_time, result_file_id, create_by, create_time, update_by, update_time)
+values(5, 5, 104, '2026-09-22 11:40:00', '铁路新村小区 A座 1单元 1层',
+  '用塞尺测量制动器间隙，左右两侧均超过 0.7mm 标准值',
+  '调整制动器间隙至 0.4mm 并做 125% 额定载荷制动试验，合格',
+  '制动器间隙超标', '制动器闸瓦 2 副', '2026-09-22 18:00:00', null, 'admin', sysdate(), null, null);
+insert into repair_record
+  (record_id, order_id, worker_id, arrive_time, arrive_location, investigate_note, repair_desc, fault_reason, replace_parts, finish_time, result_file_id, create_by, create_time, update_by, update_time)
+values(6, 6, 103, '2026-07-12 11:05:00', '和平里小区 3号楼 1单元 1层',
+  '检查发现曳引钢丝绳锈蚀，局部断丝超标，运行中卡阻导致急停',
+  '更换全部曳引钢丝绳，复检张力均匀后停梯待大修评估',
+  '钢丝绳锈蚀断丝', '曳引钢丝绳 6 根', '2026-07-12 13:00:00', null, 'admin', sysdate(), null, null);
+insert into repair_record
+  (record_id, order_id, worker_id, arrive_time, arrive_location, investigate_note, repair_desc, fault_reason, replace_parts, finish_time, result_file_id, create_by, create_time, update_by, update_time)
+values(7, 7, 103, '2026-07-24 16:10:00', '和平里小区 3号楼 1单元 1层',
+  '拆检门锁发现触点烧蚀发黑，接触电阻偏大',
+  '更换门锁触点组件，调整门锁啮合深度，开关门测试正常',
+  '门锁触点烧蚀', '门锁触点 2 套', '2026-07-24 18:00:00', null, 'admin', sysdate(), null, null);
+insert into repair_record
+  (record_id, order_id, worker_id, arrive_time, arrive_location, investigate_note, repair_desc, fault_reason, replace_parts, finish_time, result_file_id, create_by, create_time, update_by, update_time)
+values(8, 8, 103, '2026-08-11 11:30:00', '和平里小区 3号楼 1单元 1层',
+  '测量制动器间隙超标，制动时闸瓦与制动轮摩擦产生异响',
+  '调整制动器间隙并做制动试验，停层准确度恢复正常',
+  '制动器间隙超标', '无', '2026-08-11 16:00:00', null, 'admin', sysdate(), null, null);
+insert into repair_record
+  (record_id, order_id, worker_id, arrive_time, arrive_location, investigate_note, repair_desc, fault_reason, replace_parts, finish_time, result_file_id, create_by, create_time, update_by, update_time)
+values(9, 9, 103, '2026-09-15 15:00:00', '和平里小区 3号楼 1单元 1层',
+  '限速器动作后未正常复位，安全钳楔块卡滞',
+  '复位安全钳并检修限速器，因曳引机亦有异常，电梯停用待大修',
+  '限速器动作异常、安全钳卡滞', '安全钳楔块 2 块', '2026-09-15 17:30:00', null, 'admin', sysdate(), null, null);
+insert into repair_record
+  (record_id, order_id, worker_id, arrive_time, arrive_location, investigate_note, repair_desc, fault_reason, replace_parts, finish_time, result_file_id, create_by, create_time, update_by, update_time)
+values(10, 10, 101, '2026-08-26 11:40:00', '阳光家园小区 1号楼 2单元 1层',
+  '随梯听音确认异响来自层门滑道，滑道干涩',
+  '清理滑道并加注润滑脂，开关门异响明显减轻',
+  '层门滑道缺油', '润滑脂 1 支', '2026-08-26 14:00:00', null, 'admin', sysdate(), null, null);
+insert into repair_record
+  (record_id, order_id, worker_id, arrive_time, arrive_location, investigate_note, repair_desc, fault_reason, replace_parts, finish_time, result_file_id, create_by, create_time, update_by, update_time)
+values(11, 11, 101, '2026-09-19 16:30:00', '阳光家园小区 1号楼 2单元 3层',
+  '拆下按钮实测触点氧化，导通不良',
+  '更换该层外呼按钮并除尘，逐层测试信号正常',
+  '按钮触点氧化', '外呼按钮 1 只', '2026-09-19 18:00:00', null, 'admin', sysdate(), null, null);
+insert into repair_record
+  (record_id, order_id, worker_id, arrive_time, arrive_location, investigate_note, repair_desc, fault_reason, replace_parts, finish_time, result_file_id, create_by, create_time, update_by, update_time)
+values(12, 12, 103, '2026-09-08 14:00:00', '阳光家园小区 2号楼 1单元 1层',
+  '打开控制柜听音确认异响来自接触器，吸合时有轻微打火',
+  '更换控制柜接触器并紧固接线，试运行异响消除',
+  '控制柜接触器异响', '交流接触器 1 台', '2026-09-08 16:00:00', null, 'admin', sysdate(), null, null);
+
+-- 状态流转记录：由上面工单的各个时间字段派生，保证每张工单的时间轴都能展开
+-- 论文 3.1「报修进度跟踪」要求以时间轴展示全流程，缺了这张表工单详情的时间轴就是空的
+-- 操作人姓名取自 sys_user 的真实昵称，不写死角色名，与接口实时写入的记录保持一致
+insert into order_status_log
+  (order_id, from_status, to_status, operate_type, operator_id, operator_name, operator_role, operate_time, remark)
+select o.order_id, s.from_status, s.to_status, s.operate_type,
+       s.operator_id, u.nick_name, s.operator_role, s.operate_time, s.remark
+from repair_order o
+join (
+  select order_id, ''          as from_status, 'pending'   as to_status, 'report'      as operate_type,
+         user_id     as operator_id,   'owner'    as operator_role,
+         report_time as operate_time,  '业主提交故障报修' as remark
+    from repair_order where report_time is not null
+  union all
+  select order_id, 'pending',  'assigned',  'assign',      assigner_id, 'property',
+         assign_time,  '物业审核后指派维修员'   from repair_order where assign_time is not null
+  union all
+  select order_id, 'assigned', 'accepted',  'accept',      assignee_id, 'worker',
+         accept_time,  '维修员确认接单'         from repair_order where accept_time is not null
+  union all
+  select order_id, 'accepted', 'arrived',   'arrive',      assignee_id, 'worker',
+         arrive_time,  '维修员已到达现场'       from repair_order where arrive_time is not null
+  union all
+  select order_id, 'arrived',  'repairing', 'investigate', assignee_id, 'worker',
+         date_add(arrive_time, interval 10 minute), '维修员排查故障原因'
+    from repair_order where arrive_time is not null and finish_time is not null
+  union all
+  select order_id, 'repairing','repaired',  'finish',      assignee_id, 'worker',
+         finish_time,  '维修完成，提交处理说明' from repair_order where finish_time is not null
+  union all
+  select order_id, 'repaired', 'confirmed', 'confirm',     user_id,     'owner',
+         confirm_time, '业主确认故障已消除，工单闭环' from repair_order where confirm_time is not null
+) s on s.order_id = o.order_id
+left join sys_user u on u.user_id = s.operator_id
+where o.order_status not in ('pending', 'rejected')
+order by o.order_id, s.operate_time;
+
+-- 检查项结果：每条已完成的巡检单套用其维保类型对应的模板，逐项落一行
+-- 论文 3.1「定期巡检执行」要求可查看检查项结果，缺了这张表只能看到汇总数看不到逐项明细
+insert into inspection_item_result
+  (record_id, item_id, item_name, item_category, check_result, abnormal_desc, file_id, order_num)
+select r.record_id, m.item_id, m.item_name, m.item_category,
+       case when r.execute_result = 'abnormal' and m.order_num = (
+              select max(m2.order_num) from maintain_item m2
+              where m2.maintain_type = r.maintain_type and m2.status = '0')
+            then 'abnormal' else 'normal' end,
+       case when r.execute_result = 'abnormal' and m.order_num = (
+              select max(m2.order_num) from maintain_item m2
+              where m2.maintain_type = r.maintain_type and m2.status = '0')
+            then ifnull(nullif(r.abnormal_desc, ''), '运行中发现异常，已记录并安排复查')
+            else '' end,
+       null, m.order_num
+from inspection_record r
+join maintain_item m on m.maintain_type = r.maintain_type and m.status = '0'
+where r.record_status = 'finished';
+
 
 
 -- ============================================================

@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -87,39 +89,49 @@ public class FileController extends BaseController
 
     /**
      * 文件预览，图片与视频支持浏览器直接打开
+     * 库里存的是访问路径（/profile/...），要还原成磁盘绝对路径才能读，
+     * 否则会 FileNotFoundException，图片在页面上就是空白。
      */
     @GetMapping("/preview/{fileId}")
-    public void preview(@PathVariable("fileId") Long fileId, HttpServletResponse response)
+    public void preview(@PathVariable("fileId") Long fileId, HttpServletResponse response) throws IOException
     {
         ElevatorFile sysFile = fileService.getById(fileId);
-        try
+        String diskPath = fileService.resolveDiskPath(sysFile);
+        File diskFile = new File(diskPath);
+        if (!diskFile.exists() || !diskFile.isFile())
         {
-            response.setContentType(resolveContentType(sysFile.getFileType(), sysFile.getFileSuffix()));
-            FileUtils.writeBytes(sysFile.getFilePath(), response.getOutputStream());
+            log.warn("文件预览失败，磁盘上找不到文件，fileId={}，路径={}", fileId, diskPath);
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setCharacterEncoding("utf-8");
+            response.getWriter().write("{\"code\":404,\"msg\":\"文件不存在或已被清理\"}");
+            return;
         }
-        catch (Exception e)
-        {
-            log.error("文件预览失败，fileId={}", fileId, e);
-        }
+        response.setContentType(resolveContentType(sysFile.getFileType(), sysFile.getFileSuffix()));
+        FileUtils.writeBytes(diskPath, response.getOutputStream());
     }
 
     /**
      * 文件下载
      */
     @GetMapping("/download/{fileId}")
-    public void download(@PathVariable("fileId") Long fileId, HttpServletResponse response)
+    public void download(@PathVariable("fileId") Long fileId, HttpServletResponse response) throws IOException
     {
         ElevatorFile sysFile = fileService.getById(fileId);
-        try
+        String diskPath = fileService.resolveDiskPath(sysFile);
+        File diskFile = new File(diskPath);
+        if (!diskFile.exists() || !diskFile.isFile())
         {
-            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-            FileUtils.setAttachmentResponseHeader(response, sysFile.getFileName());
-            FileUtils.writeBytes(sysFile.getFilePath(), response.getOutputStream());
+            log.warn("文件下载失败，磁盘上找不到文件，fileId={}，路径={}", fileId, diskPath);
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setCharacterEncoding("utf-8");
+            response.getWriter().write("{\"code\":404,\"msg\":\"文件不存在或已被清理\"}");
+            return;
         }
-        catch (Exception e)
-        {
-            log.error("文件下载失败，fileId={}", fileId, e);
-        }
+        response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+        FileUtils.setAttachmentResponseHeader(response, sysFile.getFileName());
+        FileUtils.writeBytes(diskPath, response.getOutputStream());
     }
 
     /**

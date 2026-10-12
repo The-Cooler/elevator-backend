@@ -38,6 +38,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="communityName"  column="community_name"  />
         <result property="buildingNo"     column="building_no"     />
         <result property="unitNo"         column="unit_no"         />
+        <result property="longitude"      column="longitude"       />
+        <result property="latitude"       column="latitude"        />
         <result property="assigneeName"   column="assignee_name"   />
         <result property="assigneePhone"  column="assignee_phone"  />
         <result property="assignerName"   column="assigner_name"   />
@@ -54,6 +56,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                e.elevator_code as elevator_code,
                e.brand as elevator_brand,
                e.unit_no as unit_no,
+               e.longitude as longitude,
+               e.latitude as latitude,
                b.community_id as community_id,
                b.building_no as building_no,
                c.community_name as community_name,
@@ -106,6 +110,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
             <if test="queryAssigneeId != null">
                 and o.assignee_id = #{queryAssigneeId}
+            </if>
+            <!-- 维修过程视图：只列已派单的工单，把待审核、已驳回的排除在外 -->
+            <if test="queryAssignedOnly != null and queryAssignedOnly">
+                and o.assignee_id is not null
+                and o.order_status not in ('pending', 'rejected')
             </if>
             <if test="faultDesc != null and faultDesc != ''">
                 and o.fault_desc like concat('%', #{faultDesc}, '%')

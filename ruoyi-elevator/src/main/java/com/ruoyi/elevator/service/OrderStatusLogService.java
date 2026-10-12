@@ -73,11 +73,25 @@ public class OrderStatusLogService
     }
 
     /**
-     * 生成工单编号，格式 BX + yyyyMMdd + 6位时间后缀，保证唯一
+     * 生成工单编号，格式 BX + yyyyMMddHHmmss + 3位秒内序号
+     *
+     * 只到秒的话，同一秒内提交两单会撞上 repair_order 的 uk_order_no 唯一索引，
+     * 因此补一个秒内自增序号；换秒即归零。
      */
-    public static String buildOrderNo()
+    private static int orderNoSeq = 0;
+
+    private static String lastOrderNoSecond = "";
+
+    public static synchronized String buildOrderNo()
     {
-        return "BX" + DateUtils.dateTimeNow("yyyyMMddHHmmss");
+        String second = DateUtils.dateTimeNow("yyyyMMddHHmmss");
+        if (!second.equals(lastOrderNoSecond))
+        {
+            lastOrderNoSecond = second;
+            orderNoSeq = 0;
+        }
+        orderNoSeq++;
+        return String.format("BX%s%03d", second, orderNoSeq);
     }
 }
 

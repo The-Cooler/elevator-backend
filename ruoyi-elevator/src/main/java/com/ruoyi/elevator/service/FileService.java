@@ -1,6 +1,7 @@
 package com.ruoyi.elevator.service;
 
 import com.ruoyi.common.config.RuoYiConfig;
+import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUploadUtils;
 import com.ruoyi.elevator.domain.ElevatorFile;
@@ -98,8 +99,8 @@ public class FileService
 
         ElevatorFile sysFile = new ElevatorFile();
         sysFile.setFileName(originalName);
-        sysFile.setFilePath(storagePath);
-        sysFile.setFileUrl(RuoYiConfig.getProfile() + StringUtils.substringAfter(storagePath, RuoYiConfig.getProfile()));
+        sysFile.setFilePath(toDiskPath(storagePath));
+        sysFile.setFileUrl(storagePath);
         sysFile.setFileType(fileType);
         sysFile.setFileSuffix(suffix);
         sysFile.setFileSize(file.getSize());
@@ -134,6 +135,40 @@ public class FileService
                     ElevatorErrorCode.FILE_NOT_EXIST.getCode());
         }
         return sysFile;
+    }
+
+    /**
+     * 取文件在磁盘上的绝对路径
+     *
+     * 库里存的是上传接口返回的访问路径，形如 /profile/upload/xxx，
+     * 它的前缀是资源映射用的 /profile，不是磁盘目录，直接拿去读文件会 FileNotFoundException。
+     * 这里统一换成真实的绝对路径。
+     *
+     * @param file 文件记录
+     * @return 磁盘绝对路径；无法还原时原样返回
+     */
+    public String resolveDiskPath(ElevatorFile file)
+    {
+        return toDiskPath(file.getFilePath());
+    }
+
+    /**
+     * 把访问路径还原成磁盘绝对路径
+     * 已是绝对路径的原样返回，兼容早期写入的数据
+     */
+    private String toDiskPath(String path)
+    {
+        if (StringUtils.isEmpty(path))
+        {
+            return path;
+        }
+        String normalized = path.replace("\\", "/");
+        // 访问路径带 /profile 前缀，换成真实的上传根目录
+        if (normalized.startsWith(Constants.RESOURCE_PREFIX + "/"))
+        {
+            return RuoYiConfig.getProfile() + normalized.substring(Constants.RESOURCE_PREFIX.length());
+        }
+        return path;
     }
 
     /**

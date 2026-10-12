@@ -58,11 +58,16 @@ public class DispatchService
 
     /**
      * 查询待派单工单池，紧急工单在前
+     *
+     * 物业要在池子里挑单、判断紧急程度，得先看到业主拍的现场照片，
+     * 所以证据随列表一次取回，不用点进派单页才有。
      */
     public List<RepairOrder> pendingList(RepairOrder query)
     {
         query.setOrderStatus(OrderStatusUtil.PENDING);
-        return repairOrderMapper.selectRepairOrderList(query);
+        List<RepairOrder> list = repairOrderMapper.selectRepairOrderList(query);
+        repairOrderService.attachEvidences(list);
+        return list;
     }
 
     /**
@@ -111,6 +116,11 @@ public class DispatchService
 
             worker.setMatchScore(score);
             worker.setSkillMatched(skillMatched);
+            // 候选池本身已按"在岗 + 账号启用"筛过，这里补上状态字段，
+            // 让前端两个列表用同一套字段渲染
+            worker.setUserEnabled("0");
+            worker.setAssignable(true);
+            worker.setUnavailableReason("");
             result.add(worker);
         }
         result.sort(Comparator.comparing(WorkerSkill::getMatchScore).reversed());
@@ -120,28 +130,35 @@ public class DispatchService
     /**
      * 确认派单
      *
+     * 推荐列表只放当前能接单的人；但人不在岗位上不等于这一单派不出去，
+     * 物业可以手动指定任何人。指定的人不在推荐范围内时返回错误码 4016，
+     * 前端弹确认框，物业点了确认再带 confirmNotRecommended=true 重发一次。
+     *
      * @param orderId 工单ID
      * @param assigneeId 维修员ID
      * @param remark 派单备注，物业填写后写入流转记录并随通知发给维修员，可为空
+     * @param confirmNotRecommended 已确认"该维修员不在推荐范围仍要指派"
      */
     @Transactional(rollbackFor = Exception.class)
-    public int assign(Long orderId, Long assigneeId, String remark)
+    public int assign(Long orderId, Long assigneeId, String remark, boolean confirmNotRecommended)
     {
         LoginUserUtil.checkPropertyOrAdmin();
         if (assigneeId == null)
         {
             throw new ElevatorException("请选择维修员");
         }
+        // 手动指定用全量口径查：不要求在岗、不要求账号启用，人必须能找到
         WorkerSkill worker = workerSkillMapper.selectByWorkerId(assigneeId);
         if (worker == null)
         {
             throw new ElevatorException(ElevatorErrorCode.WORKER_UNAVAILABLE.getMessage(),
                     ElevatorErrorCode.WORKER_UNAVAILABLE.getCode());
         }
-        if ("1".equals(worker.getWorkStatus()) || "2".equals(worker.getWorkStatus()))
+        // 休息、请假、账号停用的都还能派，但必须让物业先确认一次
+        if (!isAssignable(worker) && !confirmNotRecommended)
         {
-            throw new ElevatorException(ElevatorErrorCode.WORKER_UNAVAILABLE.getMessage(),
-                    ElevatorErrorCode.WORKER_UNAVAILABLE.getCode());
+            throw new ElevatorException(ElevatorErrorCode.WORKER_NOT_RECOMMENDED.getMessage(),
+                    ElevatorErrorCode.WORKER_NOT_RECOMMENDED.getCode());
         }
 
         RepairOrder order = repairOrderService.mustGetOrder(orderId);
@@ -167,6 +184,12 @@ public class DispatchService
         {
             logRemark = logRemark + "，备注：" + remark;
         }
+        // 指定了不在推荐范围内的人，留个痕，事后能看清当时的情况
+        String unavailable = unavailableReason(worker);
+        if (StringUtils.isNotEmpty(unavailable))
+        {
+            logRemark = logRemark + "（指定派单，该维修员" + unavailable + "）";
+        }
         repairOrderService.recordStatus(orderId, fromStatus, OrderStatusUtil.ASSIGNED, "assign", logRemark);
 
         // 更新维修员在手工单数
@@ -184,19 +207,50 @@ public class DispatchService
     }
 
     /**
+     * 判断维修员此刻是否可接单：账号启用且在岗
+     */
+    private boolean isAssignable(WorkerSkill worker)
+    {
+        return "0".equals(worker.getUserEnabled())
+                && (worker.getWorkStatus() == null || "0".equals(worker.getWorkStatus()));
+    }
+
+    /**
+     * 不可接单的原因，可接单时返回空串
+     */
+    private String unavailableReason(WorkerSkill worker)
+    {
+        if (isAssignable(worker))
+        {
+            return "";
+        }
+        boolean disabled = !"0".equals(worker.getUserEnabled());
+        if ("1".equals(worker.getWorkStatus()))
+        {
+            return disabled ? "账号已停用、休息中" : "休息中";
+        }
+        if ("2".equals(worker.getWorkStatus()))
+        {
+            return disabled ? "账号已停用、请假中" : "请假中";
+        }
+        return disabled ? "账号已停用" : "当前不在岗";
+    }
+
+    /**
      * 批量派单
      *
      * @param orderIds 工单ID数组
      * @param assigneeId 维修员ID
      * @param remark 派单备注，可为空
+     * @param confirmNotRecommended 已确认"该维修员不在推荐范围仍要指派"
      */
     @Transactional(rollbackFor = Exception.class)
-    public int batchAssign(Long[] orderIds, Long assigneeId, String remark)
+    public int batchAssign(Long[] orderIds, Long assigneeId, String remark, boolean confirmNotRecommended)
     {
         int count = 0;
         for (Long orderId : orderIds)
         {
-            count += assign(orderId, assigneeId, remark);
+            count += assign(orderId, assigneeId, remark, confirmNotRecommended);
         }
         return count;
     }

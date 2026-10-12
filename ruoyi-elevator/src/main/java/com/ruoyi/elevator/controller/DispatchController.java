@@ -68,7 +68,7 @@ public class DispatchController extends BaseController
     public AjaxResult assign(@RequestBody RepairOrder repairOrder)
     {
         return toAjax(dispatchService.assign(repairOrder.getOrderId(), repairOrder.getAssigneeId(),
-                repairOrder.getRemark()));
+                repairOrder.getRemark(), Boolean.TRUE.equals(repairOrder.getConfirmNotRecommended())));
     }
 
     /**
@@ -80,7 +80,7 @@ public class DispatchController extends BaseController
     public AjaxResult batchAssign(@RequestBody RepairOrder repairOrder)
     {
         return toAjax(dispatchService.batchAssign(repairOrder.getOrderIds(), repairOrder.getAssigneeId(),
-                repairOrder.getRemark()));
+                repairOrder.getRemark(), Boolean.TRUE.equals(repairOrder.getConfirmNotRecommended())));
     }
 
     /**

@@ -71,20 +71,25 @@ public class WarningController extends BaseController
 
     /**
      * 标记指定预警已读
+     * 目标是「已读」这个终态，已经是已读的不算失败
      */
     @PutMapping("/read/{warningIds}")
     public AjaxResult read(@PathVariable("warningIds") Long[] warningIds)
     {
-        return toAjax(warningService.markRead(warningIds));
+        int rows = warningService.markRead(warningIds);
+        return AjaxResult.success(rows > 0 ? "已标记 " + rows + " 条为已读" : "选中的预警都已是已读");
     }
 
     /**
      * 全部标记已读
+     * 已经没有未读时也算成功，这条操作用户看来就是「保证全部已读」，
+     * 用 toAjax 会把「影响 0 行」报成失败，用户重复点一次就弹错误。
      */
     @PutMapping("/readAll")
     public AjaxResult readAll()
     {
-        return toAjax(warningService.markAllRead());
+        int rows = warningService.markAllRead();
+        return AjaxResult.success(rows > 0 ? "已标记 " + rows + " 条为已读" : "没有未读的预警");
     }
 
     /**

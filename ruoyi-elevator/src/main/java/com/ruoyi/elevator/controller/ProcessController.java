@@ -46,14 +46,27 @@ public class ProcessController extends BaseController
     }
 
     /**
-     * 记录到达现场，可携带定位信息
+     * 查询全部工单的维修过程，物业查看用
+     * 只列已派单的工单，并随列表带上各自的维修记录
+     */
+    @PreAuthorize("@ss.hasPermi('order:process:list')")
+    @GetMapping("/list")
+    public TableDataInfo list(RepairOrder repairOrder)
+    {
+        startPage();
+        List<RepairOrder> list = workOrderService.processList(repairOrder);
+        return getDataTable(list);
+    }
+
+    /**
+     * 记录到达现场，携带定位坐标与可选的演示标记
      */
     @PreAuthorize("@ss.hasPermi('order:process:edit')")
     @Log(title = "维修到场", businessType = BusinessType.UPDATE)
     @PostMapping("/arrive")
-    public AjaxResult arrive(@RequestBody RepairOrder repairOrder)
+    public AjaxResult arrive(@RequestBody RepairRecord repairRecord)
     {
-        return toAjax(workOrderService.arrive(repairOrder.getOrderId(), repairOrder.getArriveLocation()));
+        return toAjax(workOrderService.arrive(repairRecord.getOrderId(), repairRecord));
     }
 
     /**

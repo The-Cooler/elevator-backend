@@ -10,6 +10,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="workerId"        column="worker_id"        />
         <result property="arriveTime"      column="arrive_time"      />
         <result property="arriveLocation"  column="arrive_location"  />
+        <result property="arriveLongitude" column="arrive_longitude" />
+        <result property="arriveLatitude"  column="arrive_latitude"  />
+        <result property="arriveDistance"  column="arrive_distance"  />
+        <result property="demoFlag"        column="demo_flag"        />
         <result property="investigateNote" column="investigate_note" />
         <result property="repairDesc"      column="repair_desc"      />
         <result property="faultReason"     column="fault_reason"     />
@@ -26,6 +30,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <sql id="selectRepairRecordVo">
         select r.record_id, r.order_id, r.worker_id, r.arrive_time, r.arrive_location,
+               r.arrive_longitude, r.arrive_latitude, r.arrive_distance, r.demo_flag,
                r.investigate_note, r.repair_desc, r.fault_reason, r.replace_parts,
                r.finish_time, r.result_file_id, r.create_by, r.create_time, r.update_by, r.update_time,
                u.nick_name as worker_name,
@@ -42,6 +47,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         limit 1
     </select>
 
+    <select id="selectByOrderIds" parameterType="java.lang.Long" resultMap="RepairRecordResult">
+        <include refid="selectRepairRecordVo"/>
+        where r.order_id in
+        <foreach item="orderId" collection="array" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
+        order by r.record_id desc
+    </select>
+
     <select id="selectRepairRecordList" parameterType="com.ruoyi.elevator.domain.RepairRecord" resultMap="RepairRecordResult">
         <include refid="selectRepairRecordVo"/>
         <where>
@@ -53,11 +67,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <insert id="insertRepairRecord" parameterType="com.ruoyi.elevator.domain.RepairRecord" useGeneratedKeys="true" keyProperty="recordId">
         insert into repair_record (
-            order_id, worker_id, arrive_time, arrive_location, investigate_note,
+            order_id, worker_id, arrive_time, arrive_location,
+            arrive_longitude, arrive_latitude, arrive_distance, demo_flag,
+            investigate_note,
             repair_desc, fault_reason, replace_parts, finish_time, result_file_id,
             create_by, create_time
         ) values (
-            #{orderId}, #{workerId}, #{arriveTime}, #{arriveLocation}, #{investigateNote},
+            #{orderId}, #{workerId}, #{arriveTime}, #{arriveLocation},
+            #{arriveLongitude}, #{arriveLatitude}, #{arriveDistance}, #{demoFlag},
+            #{investigateNote},
             #{repairDesc}, #{faultReason}, #{replaceParts}, #{finishTime}, #{resultFileId},
             #{createBy}, sysdate()
         )
@@ -68,6 +86,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <set>
             <if test="arriveTime != null">arrive_time = #{arriveTime},</if>
             <if test="arriveLocation != null">arrive_location = #{arriveLocation},</if>
+            <if test="arriveLongitude != null">arrive_longitude = #{arriveLongitude},</if>
+            <if test="arriveLatitude != null">arrive_latitude = #{arriveLatitude},</if>
+            <if test="arriveDistance != null">arrive_distance = #{arriveDistance},</if>
+            <if test="demoFlag != null">demo_flag = #{demoFlag},</if>
             <if test="investigateNote != null">investigate_note = #{investigateNote},</if>
             <if test="repairDesc != null">repair_desc = #{repairDesc},</if>
             <if test="faultReason != null">fault_reason = #{faultReason},</if>

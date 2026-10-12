@@ -2,6 +2,7 @@ package com.ruoyi.elevator.service;
 
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.elevator.domain.Elevator;
 import com.ruoyi.elevator.domain.InspectionItemResult;
 import com.ruoyi.elevator.domain.InspectionRecord;
 import com.ruoyi.elevator.domain.MaintainArchive;
@@ -12,6 +13,7 @@ import com.ruoyi.elevator.exception.ElevatorException;
 import com.ruoyi.elevator.mapper.ElevatorMapper;
 import com.ruoyi.elevator.mapper.InspectionMapper;
 import com.ruoyi.elevator.mapper.MaintainPlanMapper;
+import com.ruoyi.elevator.util.GeoUtil;
 import com.ruoyi.elevator.util.LoginUserUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,7 +122,7 @@ public class InspectionService
      */
     public List<MaintainItem> selectItemsByElevator(Long elevatorId, String maintainType)
     {
-        com.ruoyi.elevator.domain.Elevator elevator = elevatorMapper.selectElevatorById(elevatorId);
+        Elevator elevator = elevatorMapper.selectElevatorById(elevatorId);
         if (elevator == null)
         {
             throw new ElevatorException("电梯不存在");
@@ -133,9 +135,16 @@ public class InspectionService
 
     /**
      * 现场打卡，记录打卡时间与定位
+     *
+     * 打卡位置是「人确实到了这台电梯跟前」的凭据，坐标由前端定位直出、不许手填，
+     * 这里再按坐标与该电梯台账比对，超出范围直接拒绝。
+     * 演示模式（demo=true）跳过校验，落库时打标记。
+     *
+     * @param recordId 巡检记录ID
+     * @param form     打卡信息，含位置文字、经纬度、是否演示
      */
     @Transactional(rollbackFor = Exception.class)
-    public int clockIn(Long recordId, String location)
+    public int clockIn(Long recordId, InspectionRecord form)
     {
         InspectionRecord record = mustGetRecord(recordId);
         if ("finished".equals(record.getRecordStatus()))
@@ -143,10 +152,32 @@ public class InspectionService
             throw new ElevatorException(ElevatorErrorCode.INSPECTION_FINISHED.getMessage(),
                     ElevatorErrorCode.INSPECTION_FINISHED.getCode());
         }
+        boolean demo = "1".equals(form.getDemoFlag());
+        String location = form.getClockInLocation();
+        if (StringUtils.isEmpty(location))
+        {
+            throw new ElevatorException("请先获取当前位置");
+        }
+
+        Integer distance = null;
+        if (!demo)
+        {
+            if (form.getClockInLongitude() == null || form.getClockInLatitude() == null)
+            {
+                throw new ElevatorException("未取到定位坐标，请允许浏览器获取位置后重试");
+            }
+            distance = checkClockInDistance(record.getElevatorId(),
+                    form.getClockInLongitude().doubleValue(), form.getClockInLatitude().doubleValue());
+        }
+
         InspectionRecord update = new InspectionRecord();
         update.setRecordId(recordId);
         update.setClockInTime(new Date());
         update.setClockInLocation(location);
+        update.setClockInLongitude(form.getClockInLongitude());
+        update.setClockInLatitude(form.getClockInLatitude());
+        update.setClockInDistance(distance);
+        update.setDemoFlag(demo ? "1" : "0");
         // 未指定执行人时，把打卡人设为执行人
         if (record.getExecutorId() == null)
         {
@@ -154,6 +185,27 @@ public class InspectionService
         }
         update.setUpdateBy(LoginUserUtil.getUsername());
         return inspectionMapper.updateInspectionRecord(update);
+    }
+
+    /**
+     * 比对打卡点与该巡检单电梯台账坐标的距离，超出允许范围直接拒绝
+     */
+    private int checkClockInDistance(Long elevatorId, double lng, double lat)
+    {
+        Elevator elevator = elevatorMapper.selectElevatorById(elevatorId);
+        if (elevator == null || elevator.getLongitude() == null || elevator.getLatitude() == null)
+        {
+            throw new ElevatorException("该电梯未登记位置坐标，无法校验打卡位置，请联系物业补充");
+        }
+        int distance = GeoUtil.distance(lng, lat,
+                elevator.getLongitude().doubleValue(), elevator.getLatitude().doubleValue());
+        if (distance > GeoUtil.ALLOW_DISTANCE_METERS)
+        {
+            throw new ElevatorException(String.format(
+                    "当前位置距离该电梯约 %d 米，超出 %d 米范围，请到达电梯现场后再打卡",
+                    distance, GeoUtil.ALLOW_DISTANCE_METERS));
+        }
+        return distance;
     }
 
     /**
@@ -349,11 +401,17 @@ public class InspectionService
     {
         List<MaintainPlan> duePlans = maintainPlanMapper.selectDuePlans();
         int count = 0;
-        String today = DateUtils.getDate();
         for (MaintainPlan plan : duePlans)
         {
-            // 同一计划同一计划日期不重复生成
-            int exists = inspectionMapper.checkRecordExists(plan.getPlanId(), today);
+            // 同一计划同一计划日期不重复生成。
+            // 这里必须用计划日期（写入时用的就是它）去查，用当天日期查会永远命中不到，
+            // 每次调用都会再生成一份，同计划同日期的巡检单会越堆越多。
+            if (plan.getNextDate() == null)
+            {
+                continue;
+            }
+            String planDate = DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD, plan.getNextDate());
+            int exists = inspectionMapper.checkRecordExists(plan.getPlanId(), planDate);
             if (exists > 0)
             {
                 continue;

@@ -51,7 +51,10 @@ public enum ElevatorErrorCode
     HEALTH_DATA_INSUFFICIENT(4014, "该电梯统计周期内数据不足，无法生成健康评分"),
 
     /** 预警规则不存在 */
-    WARNING_RULE_NOT_EXIST(4015, "预警规则不存在");
+    WARNING_RULE_NOT_EXIST(4015, "预警规则不存在"),
+
+    /** 指定派单超出推荐范围，需要二次确认 */
+    WORKER_NOT_RECOMMENDED(4016, "该维修员不在本次推荐范围内，确认要指定派单吗");
 
     private final Integer code;
 

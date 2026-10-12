@@ -83,4 +83,14 @@ public interface WarningMapper
      * 全部标记已读
      */
     int updateAllRead(@Param("receiverId") Long receiverId);
+
+    /**
+     * 把指定预警标为已读，管理员用，不受接收人限制
+     */
+    int updateReadForAdmin(@Param("warningIds") Long[] warningIds);
+
+    /**
+     * 把全部未读预警标为已读，管理员用
+     */
+    int updateAllReadForAdmin();
 }

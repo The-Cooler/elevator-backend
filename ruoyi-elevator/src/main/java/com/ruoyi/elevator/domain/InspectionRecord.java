@@ -3,6 +3,7 @@ package com.ruoyi.elevator.domain;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -43,6 +44,18 @@ public class InspectionRecord implements Serializable
 
     /** 打卡位置 */
     private String clockInLocation;
+
+    /** 打卡时的经度，由浏览器定位取得 */
+    private BigDecimal clockInLongitude;
+
+    /** 打卡时的纬度，由浏览器定位取得 */
+    private BigDecimal clockInLatitude;
+
+    /** 打卡点与电梯台账坐标的距离（米） */
+    private Integer clockInDistance;
+
+    /** 是否演示打卡（0正常 1演示模式，未做位置校验） */
+    private String demoFlag;
 
     /** 实际执行日期 */
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -96,6 +109,12 @@ public class InspectionRecord implements Serializable
 
     /** 单元号 */
     private String unitNo;
+
+    /** 该巡检单对应电梯的经度，联表返回，供前端算打卡距离 */
+    private BigDecimal longitude;
+
+    /** 该巡检单对应电梯的纬度，联表返回，供前端算打卡距离 */
+    private BigDecimal latitude;
 
     /** 执行人姓名 */
     private String executorName;
@@ -211,6 +230,46 @@ public class InspectionRecord implements Serializable
     public void setClockInLocation(String clockInLocation)
     {
         this.clockInLocation = clockInLocation;
+    }
+
+    public BigDecimal getClockInLongitude()
+    {
+        return clockInLongitude;
+    }
+
+    public void setClockInLongitude(BigDecimal clockInLongitude)
+    {
+        this.clockInLongitude = clockInLongitude;
+    }
+
+    public BigDecimal getClockInLatitude()
+    {
+        return clockInLatitude;
+    }
+
+    public void setClockInLatitude(BigDecimal clockInLatitude)
+    {
+        this.clockInLatitude = clockInLatitude;
+    }
+
+    public Integer getClockInDistance()
+    {
+        return clockInDistance;
+    }
+
+    public void setClockInDistance(Integer clockInDistance)
+    {
+        this.clockInDistance = clockInDistance;
+    }
+
+    public String getDemoFlag()
+    {
+        return demoFlag;
+    }
+
+    public void setDemoFlag(String demoFlag)
+    {
+        this.demoFlag = demoFlag;
     }
 
     public Date getExecuteDate()
@@ -371,6 +430,26 @@ public class InspectionRecord implements Serializable
     public void setUnitNo(String unitNo)
     {
         this.unitNo = unitNo;
+    }
+
+    public BigDecimal getLongitude()
+    {
+        return longitude;
+    }
+
+    public void setLongitude(BigDecimal longitude)
+    {
+        this.longitude = longitude;
+    }
+
+    public BigDecimal getLatitude()
+    {
+        return latitude;
+    }
+
+    public void setLatitude(BigDecimal latitude)
+    {
+        this.latitude = latitude;
     }
 
     public String getExecutorName()

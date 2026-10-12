@@ -3,6 +3,7 @@ package com.ruoyi.elevator.domain;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -47,6 +48,12 @@ public class Elevator implements Serializable
 
     /** 状态（0正常运行 1停梯检修 2已报废） */
     private String status;
+
+    /** 经度，维修员到场打卡的距离比对基准 */
+    private BigDecimal longitude;
+
+    /** 纬度，维修员到场打卡的距离比对基准 */
+    private BigDecimal latitude;
 
     /** 删除标志 */
     private String delFlag;
@@ -178,6 +185,26 @@ public class Elevator implements Serializable
     public void setStatus(String status)
     {
         this.status = status;
+    }
+
+    public BigDecimal getLongitude()
+    {
+        return longitude;
+    }
+
+    public void setLongitude(BigDecimal longitude)
+    {
+        this.longitude = longitude;
+    }
+
+    public BigDecimal getLatitude()
+    {
+        return latitude;
+    }
+
+    public void setLatitude(BigDecimal latitude)
+    {
+        this.latitude = latitude;
     }
 
     public String getDelFlag()

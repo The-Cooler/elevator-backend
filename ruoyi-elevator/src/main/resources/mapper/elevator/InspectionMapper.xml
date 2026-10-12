@@ -16,6 +16,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="executorId"      column="executor_id"      />
         <result property="clockInTime"     column="clock_in_time"    />
         <result property="clockInLocation" column="clock_in_location" />
+        <result property="clockInLongitude" column="clock_in_longitude" />
+        <result property="clockInLatitude" column="clock_in_latitude" />
+        <result property="clockInDistance" column="clock_in_distance" />
+        <result property="demoFlag"        column="demo_flag"        />
         <result property="executeDate"     column="execute_date"     />
         <result property="executeResult"   column="execute_result"   />
         <result property="abnormalDesc"    column="abnormal_desc"    />
@@ -32,16 +36,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="communityName"   column="community_name"   />
         <result property="buildingNo"      column="building_no"      />
         <result property="unitNo"          column="unit_no"          />
+        <result property="longitude"       column="longitude"        />
+        <result property="latitude"        column="latitude"         />
         <result property="executorName"    column="executor_name"    />
     </resultMap>
 
     <sql id="selectInspectionVo">
         select r.record_id, r.record_no, r.plan_id, r.elevator_id, r.maintain_type, r.plan_date,
-               r.executor_id, r.clock_in_time, r.clock_in_location, r.execute_date, r.execute_result,
+               r.executor_id, r.clock_in_time, r.clock_in_location,
+               r.clock_in_longitude, r.clock_in_latitude, r.clock_in_distance, r.demo_flag,
+               r.execute_date, r.execute_result,
                r.abnormal_desc, r.normal_count, r.abnormal_count, r.na_count, r.record_status,
                r.del_flag, r.create_by, r.create_time, r.update_by, r.update_time,
                e.elevator_code as elevator_code,
                e.unit_no as unit_no,
+               e.longitude as longitude,
+               e.latitude as latitude,
                b.building_no as building_no,
                c.community_name as community_name,
                u.nick_name as executor_name
@@ -111,6 +121,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="executorId != null">executor_id = #{executorId},</if>
             <if test="clockInTime != null">clock_in_time = #{clockInTime},</if>
             <if test="clockInLocation != null">clock_in_location = #{clockInLocation},</if>
+            <if test="clockInLongitude != null">clock_in_longitude = #{clockInLongitude},</if>
+            <if test="clockInLatitude != null">clock_in_latitude = #{clockInLatitude},</if>
+            <if test="clockInDistance != null">clock_in_distance = #{clockInDistance},</if>
+            <if test="demoFlag != null">demo_flag = #{demoFlag},</if>
             <if test="executeDate != null">execute_date = #{executeDate},</if>
             <if test="executeResult != null and executeResult != ''">execute_result = #{executeResult},</if>
             <if test="abnormalDesc != null">abnormal_desc = #{abnormalDesc},</if>

@@ -3,6 +3,7 @@ package com.ruoyi.elevator.domain;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -125,6 +126,12 @@ public class RepairOrder implements Serializable
     /** 单元号 */
     private String unitNo;
 
+    /** 故障电梯的经度，联表返回，供前端算到场距离 */
+    private BigDecimal longitude;
+
+    /** 故障电梯的纬度，联表返回，供前端算到场距离 */
+    private BigDecimal latitude;
+
     /** 维修员姓名 */
     private String assigneeName;
 
@@ -143,6 +150,9 @@ public class RepairOrder implements Serializable
     /** 维修记录，进度跟踪用 */
     private RepairRecord repairRecord;
 
+    /** 维修记录列表，列表页查看维修记录用 */
+    private List<RepairRecord> repairRecords;
+
     /** 查询用：报修时间范围起 */
     private String beginTime;
 
@@ -155,8 +165,14 @@ public class RepairOrder implements Serializable
     /** 查询用：仅查询指派给本人的工单 */
     private Long queryAssigneeId;
 
+    /** 查询用：仅查询已派单的工单，供维修过程查看 */
+    private Boolean queryAssignedOnly;
+
     /** 批量操作用：工单ID数组 */
     private Long[] orderIds;
+
+    /** 派单用：已确认"指定的人不在推荐范围内仍要派" */
+    private Boolean confirmNotRecommended;
 
     /** 接单时填写的预计到场分钟数 */
     private Integer arriveMinutes;
@@ -497,6 +513,26 @@ public class RepairOrder implements Serializable
         this.unitNo = unitNo;
     }
 
+    public BigDecimal getLongitude()
+    {
+        return longitude;
+    }
+
+    public void setLongitude(BigDecimal longitude)
+    {
+        this.longitude = longitude;
+    }
+
+    public BigDecimal getLatitude()
+    {
+        return latitude;
+    }
+
+    public void setLatitude(BigDecimal latitude)
+    {
+        this.latitude = latitude;
+    }
+
     public String getAssigneeName()
     {
         return assigneeName;
@@ -557,6 +593,26 @@ public class RepairOrder implements Serializable
         this.repairRecord = repairRecord;
     }
 
+    public List<RepairRecord> getRepairRecords()
+    {
+        return repairRecords;
+    }
+
+    public void setRepairRecords(List<RepairRecord> repairRecords)
+    {
+        this.repairRecords = repairRecords;
+    }
+
+    public Boolean getQueryAssignedOnly()
+    {
+        return queryAssignedOnly;
+    }
+
+    public void setQueryAssignedOnly(Boolean queryAssignedOnly)
+    {
+        this.queryAssignedOnly = queryAssignedOnly;
+    }
+
     public String getBeginTime()
     {
         return beginTime;
@@ -605,6 +661,16 @@ public class RepairOrder implements Serializable
     public void setOrderIds(Long[] orderIds)
     {
         this.orderIds = orderIds;
+    }
+
+    public Boolean getConfirmNotRecommended()
+    {
+        return confirmNotRecommended;
+    }
+
+    public void setConfirmNotRecommended(Boolean confirmNotRecommended)
+    {
+        this.confirmNotRecommended = confirmNotRecommended;
     }
 
     public Integer getArriveMinutes()

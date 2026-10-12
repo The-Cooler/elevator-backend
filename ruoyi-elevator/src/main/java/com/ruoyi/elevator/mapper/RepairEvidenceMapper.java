@@ -22,6 +22,11 @@ public interface RepairEvidenceMapper
     List<RepairEvidence> selectByOrderId(Long orderId);
 
     /**
+     * 按工单ID批量查询证据，列表页一次取回，维修员接单前就能看到现场照片
+     */
+    List<RepairEvidence> selectByOrderIds(Long[] orderIds);
+
+    /**
      * 新增证据
      */
     int insertRepairEvidence(RepairEvidence repairEvidence);

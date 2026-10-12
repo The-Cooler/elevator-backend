@@ -94,14 +94,14 @@ public class InspectionController extends BaseController
 
     /**
      * 现场打卡
+     * 请求体携带位置文字、经纬度与可选的演示标记
      */
     @PreAuthorize("@ss.hasPermi('maintain:inspection:execute')")
     @Log(title = "巡检打卡", businessType = BusinessType.UPDATE)
     @PostMapping("/clockIn")
-    public AjaxResult clockIn(@RequestParam("recordId") Long recordId,
-                              @RequestParam(value = "location", required = false) String location)
+    public AjaxResult clockIn(@RequestBody InspectionRecord clockInForm)
     {
-        return toAjax(inspectionService.clockIn(recordId, location));
+        return toAjax(inspectionService.clockIn(clockInForm.getRecordId(), clockInForm));
     }
 
     /**

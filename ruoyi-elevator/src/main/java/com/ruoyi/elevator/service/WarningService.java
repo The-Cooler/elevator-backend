@@ -144,17 +144,29 @@ public class WarningService
 
     /**
      * 标记指定预警已读
+     * 管理员不受接收人限制，其余角色只能标记发给自己的
      */
     public int markRead(Long[] warningIds)
     {
+        if (LoginUserUtil.isAdmin())
+        {
+            return warningMapper.updateReadForAdmin(warningIds);
+        }
         return warningMapper.updateRead(LoginUserUtil.getUserId(), warningIds);
     }
 
     /**
      * 全部标记已读
+     * 管理员不受接收人限制，处理全部未读；其余角色只处理发给自己的。
+     * 前者本来就没有 receiver_id=admin 的预警行，按接收人更新会 0 行，
+     * 被 toAjax 判为操作失败。
      */
     public int markAllRead()
     {
+        if (LoginUserUtil.isAdmin())
+        {
+            return warningMapper.updateAllReadForAdmin();
+        }
         return warningMapper.updateAllRead(LoginUserUtil.getUserId());
     }
 

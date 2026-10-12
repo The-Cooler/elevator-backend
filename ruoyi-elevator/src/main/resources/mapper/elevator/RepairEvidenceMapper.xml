@@ -65,6 +65,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by ev.evidence_id
     </select>
 
+    <select id="selectByOrderIds" parameterType="java.lang.Long" resultMap="RepairEvidenceResult">
+        <include refid="selectEvidenceVo"/>
+        where ev.del_flag = '0' and ev.order_id in
+        <foreach item="orderId" collection="array" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
+        order by ev.order_id, ev.evidence_id
+    </select>
+
     <select id="countByOrderIdAndType" resultType="int">
         select count(1) from repair_evidence
         where del_flag = '0' and order_id = #{orderId} and evidence_type = #{evidenceType}
